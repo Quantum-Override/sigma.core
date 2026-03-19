@@ -35,10 +35,12 @@ typedef void *object;
 
 typedef uintptr_t addr;
 typedef int64_t integer;
+typedef uint32_t uint;
+typedef uint16_t ushort;
 
 typedef char *string;
 typedef size_t usize;
-typedef int8_t byte;
+typedef uint8_t byte;
 typedef int8_t sbyte;
 
 // empty addr

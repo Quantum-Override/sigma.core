@@ -1,0 +1,10 @@
+[2] guid_set                  :    6 : 2026-03-18  21:59:17                     
+================================================================================
+Running: generate_not_zero                                       7.851 ms [PASS]
+Running: two_guids_differ                                        5.581 ms [PASS]
+Running: to_string_not_null                                      6.283 ms [PASS]
+Running: to_string_length                                        4.604 ms [PASS]
+Running: to_string_format                                        4.616 ms [PASS]
+Running: epoch_embedded                                          3.839 ms [PASS]
+================================================================================
+[2]     TESTS=  6        PASS=  6        FAIL=  0        SKIP=  0

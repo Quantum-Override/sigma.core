@@ -21,20 +21,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  * ----------------------------------------------
- * File: alloc.c
- * Description: Default Allocator implementation for Sigma.Core
+ * File: types.h
+ * Description: Basic type definitions for Sigma.Core
  */
 
-#include "alloc.h"
+#pragma once
 
-// Default allocator implementation using malloc/free
-static object default_alloc(usize size) { return malloc(size); }
-static void default_dispose(object ptr) { free(ptr); }
-static object default_calloc(usize nmemb, usize size) { return calloc(nmemb, size); }
-static object default_realloc(object ptr, usize size) { return realloc(ptr, size); }
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-// Default Allocator interface (conflicts with sigma.memory's Allocator)
-const sc_allocator_i Allocator = {.alloc = default_alloc,
-                                  .dispose = default_dispose,
-                                  .calloc = default_calloc,
-                                  .realloc = default_realloc};
+typedef void *object;
+
+typedef uintptr_t addr;
+typedef int64_t integer;
+typedef uint32_t uint;
+typedef uint16_t ushort;
+
+typedef char *string;
+typedef size_t usize;
+typedef uint8_t byte;
+typedef int8_t sbyte;
+
+// empty addr
+#define ADDR_EMPTY ((addr)0)
+// size of addr
+#define ADDR_SIZE sizeof(addr)
+
+// OK/ERR
+#define OK 0
+#define ERR -1
+
+#ifndef __bool_true_false_are_defined
+#define __bool_true_false_are_defined 1
+
+#define bool _Bool
+#define true 1
+#define false 0
+
+#endif

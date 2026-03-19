@@ -21,22 +21,58 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  * ----------------------------------------------
- * File: alloc.h
- * Description: Allocation facade for Sigma.Core
+ * File: guid.h
+ * Description: GUID interface for Sigma.Core
  */
 
 #pragma once
 
-#include <stdlib.h>
 #include "types.h"
 
-// Allocator interface (matches sigma.memory Allocator)
-typedef struct sc_allocator_i {
-    object (*alloc)(usize size);
-    void (*dispose)(object ptr);
-    object (*calloc)(usize nmemb, usize size);
-    object (*realloc)(object ptr, usize size);
-} sc_allocator_i;
+/**
+ * @brief 16-byte globally unique identifier.
+ *
+ * Layout:
+ *   bytes[ 0.. 7] — 64 random bits (OS CSPRNG)
+ *   bytes[ 8..15] — 64-bit nanosecond epoch, big-endian
+ *
+ * String form: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" (36 chars + NUL)
+ */
+typedef struct {
+    byte data[16];
+} sc_guid_t;
 
-// Default allocator interface (conflicts with sigma.memory's Allocator)
-extern const sc_allocator_i Allocator;
+/**
+ * @brief GUID interface.
+ */
+typedef struct sc_guid_i {
+    /**
+     * @brief Generate a new GUID.
+     * @return sc_guid_t value — no allocation, no dispose needed.
+     */
+    sc_guid_t (*generate)(void);
+
+    /**
+     * @brief Format a GUID as a canonical hex string.
+     *
+     * Format: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" (36 chars + NUL = 37 bytes).
+     * @param guid  The GUID to format.
+     * @param buf   Caller-supplied buffer of at least 37 bytes.
+     * @param size  Size of buf in bytes; pass 37 or larger.
+     * @return buf on success, NULL if buf is NULL.
+     */
+    string (*to_string)(sc_guid_t guid, string buf, usize size);
+
+    /**
+     * @brief Compare two GUIDs for equality.
+     * @return true if all 16 bytes are identical.
+     */
+    bool (*equal)(sc_guid_t a, sc_guid_t b);
+
+    /**
+     * @brief All-zero sentinel GUID.
+     */
+    sc_guid_t zero;
+} sc_guid_i;
+
+extern const sc_guid_i Guid;

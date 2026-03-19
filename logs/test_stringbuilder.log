@@ -1,0 +1,14 @@
+[2] text_stringbuilder_set    :   10 : 2026-03-18  21:59:17                     
+================================================================================
+Running: StringBuilder new                                      12.717 ms [PASS]
+Running: StringBuilder append                                   17.338 ms [PASS]
+Running: StringBuilder appendf                                  11.122 ms [PASS]
+Running: StringBuilder clear                                    10.839 ms [PASS]
+Running: StringBuilder capacity growth                         218.390 ms [PASS]
+Running: StringBuilder length                                    8.867 ms [PASS]
+Running: StringBuilder get capacity                              8.338 ms [PASS]
+Running: StringBuilder snew                                     10.450 ms [PASS]
+Running: StringBuilder appendl                                  10.515 ms [PASS]
+Running: StringBuilder set capacity                             13.143 ms [PASS]
+================================================================================
+[2]     TESTS= 10        PASS= 10        FAIL=  0        SKIP=  0

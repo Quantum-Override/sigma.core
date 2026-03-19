@@ -1,0 +1,9 @@
+[2] text_memory_compat        :    5 : 2026-03-18  21:59:17                     
+================================================================================
+Running: Basic string operations                                 6.894 ms [PASS]
+Running: StringBuilder operations                                8.381 ms [PASS]
+Running: String duplication                                      3.841 ms [PASS]
+Running: String formatting                                       4.085 ms [PASS]
+Running: Multiple allocations                                   16.964 ms [PASS]
+================================================================================
+[2]     TESTS=  5        PASS=  5        FAIL=  0        SKIP=  0

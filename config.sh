@@ -16,7 +16,7 @@ ASAN_ENABLED=false
 ASAN_OPTIONS="detect_leaks=1:detect_stack_use_after_return=1:detect_invalid_pointer_pairs=1"
 
 # Base compiler flags
-BASE_CFLAGS="-Wall -Wextra -g -fPIC -std=$STD -I./include"
+BASE_CFLAGS="-Wall -Wextra -g -fPIC -std=$STD -I./include -I../sigma.memory/include -I/usr/local/include"
 
 # Add ASAN flags if enabled
 if [ "$ASAN_ENABLED" = true ]; then
@@ -24,9 +24,24 @@ if [ "$ASAN_ENABLED" = true ]; then
 fi
 
 CFLAGS="$BASE_CFLAGS"
-TST_CFLAGS="$CFLAGS -DTSTDBG -I/usr/include/sigmatest"
+TST_CFLAGS="$CFLAGS -DTSTDBG -I./test -I/usr/local/include -I/usr/local/include/sigma.test"
 LDFLAGS=""
-TST_LDFLAGS="-lstest -L/usr/lib"
+# sigma.test only provides __wrap_malloc / __wrap_free — do not wrap realloc or
+# calloc, which are called internally by sigma.memory and have no __real_* counterpart.
+TST_LDFLAGS="-Wl,--wrap=malloc -Wl,--wrap=free"
+
+# REQUIRES: dependencies bundled into packages by cpkg.
+# Empty here — sigma.core packages are thin (no bundled deps).
+REQUIRES=()
+
+# TST_REQUIRES: packages linked into test binaries by rtest/ctest.
+# Note: sigma.memory.o already bundles sigma.collections — do not list both.
+TST_REQUIRES=("sigma.memory" "sigma.test")
+
+# LOCAL_PACKAGES_DIR: when set, rtest checks this directory for package objects
+# *before* /usr/local/packages/. Use for dev builds where installed packages
+# are stale relative to local source.
+LOCAL_PACKAGES_DIR="local_packages"
 
 SRC_DIR=src
 BUILD_DIR=build
@@ -36,7 +51,11 @@ TEST_DIR=test
 TST_BUILD_DIR="$BUILD_DIR/test"
 
 # Bundle definitions: space-separated list of source names (without .c)
-CORE_SOURCES="alloc"
+CORE_SOURCES="time guid module strings io"
+
+# rtest: explicit source list (src/ flat layout, not src/core/ or src/utilities/)
+ANVIL_SOURCES=("$SRC_DIR/time.c" "$SRC_DIR/guid.c" "$SRC_DIR/module.c" "$SRC_DIR/strings.c" "$SRC_DIR/io.c")
+ANVIL_OBJECTS=("$BUILD_DIR/time.o" "$BUILD_DIR/guid.o" "$BUILD_DIR/module.o" "$BUILD_DIR/strings.o" "$BUILD_DIR/io.o")
 
 # Build target definitions: associative array mapping targets to commands
 # See BUILDING.md for option details
@@ -56,11 +75,71 @@ declare -A BUILD_TARGETS=(
 declare -A TEST_CONFIGS=(
     ["test_setname"]="standard"
     ["setname"]="standard"
+    ["test_time"]="standard"
+    ["time"]="standard"
+    ["test_guid"]="standard"
+    ["guid"]="standard"
+    ["test_module"]="standard"
+    ["module"]="standard"
+    ["test_string"]="standard"
+    ["string"]="standard"
+    ["test_stringbuilder"]="standard"
+    ["stringbuilder"]="standard"
+    ["test_text_memory_compat"]="standard"
+    ["text_memory_compat"]="standard"
+    ["test_file"]="standard"
+    ["file"]="standard"
+    ["test_dir"]="standard"
+    ["dir"]="standard"
 )
+
+# Per-test REQUIRES override: space-separated package names.
+# When set for a test basename, replaces the global REQUIRES list for that test's link step.
+# test_module and test_module_boot are standalone (mock_runner only) but still
+# link sigma.memory so that time.o/guid.o resolve their Allocator references.
+declare -A TEST_VARIANT_REQUIRES=(
+    ["module"]="sigma.memory"
+    ["module_boot"]="sigma.memory"
+)
+
+# Per-test LDFLAGS override: space-separated linker flags.
+# When set for a test basename, replaces TST_LDFLAGS for that test's link step.
+# Module tests are standalone (mock_runner, no sigma.test) — no --wrap needed.
+declare -A TEST_VARIANT_LDFLAGS=(
+    ["module"]=""
+    ["module_boot"]=""
+)
+
+# Per-test extra objects: injected at link time when the named package isn't
+# installed yet (e.g. during local development before cpub).
+declare -A TEST_EXTRA_OBJECTS=()
 
 # Special test flags: space-separated list of compiler flags (without -D prefix)
 # Flags will be prefixed with -D automatically
 # See BUILDING.md for option details
 declare -A TEST_COMPILE_FLAGS=(
     [setname]="TEST_BOOTSTRAP TEST_ISOLATION"
+)
+
+# ---------------------------------------------------------------------------
+# Package definitions  (consumed by cpkg / cpub)
+# Format: "output_name | obj1 obj2 ..."  where obj names match src/*.c basenames.
+# sigma.core.utils leaves Allocator undefined so the consumer links whichever
+# allocator it needs (sigma.memory.o or sigma.system.alloc.o).
+# ---------------------------------------------------------------------------
+declare -A PACKAGES=(
+    ["core"]="sigma.core         | time guid module strings io"
+    ["core.utils"]="sigma.core.utils   | time guid"
+    ["module"]="sigma.core.module       | module"
+    ["text"]="sigma.core.text    | strings"
+)
+
+# Per-package REQUIRES override: packages listed here are NOT bundled into the
+# output object.  Both packages here are thin — they expect the consumer to
+# supply their dependencies at final link time.
+declare -A PACKAGE_REQUIRES=(
+    ["core"]=""
+    ["core.utils"]=""
+    ["module"]=""
+    ["text"]=""
 )
