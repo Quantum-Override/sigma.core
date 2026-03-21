@@ -84,15 +84,17 @@ typedef struct sc_allocator_i {
     // Typed controller constructors — slab created internally, registered in registry
     bump_allocator (*create_bump)(usize size);
     reclaim_allocator (*create_reclaim)(usize size);
-    sc_ctrl_base_s *(*create_custom)(usize size, ctrl_factory_fn factory);
-
-    // External controller registration (sets external=true; release() won't slb0_free)
-    void (*register_ctrl)(sc_ctrl_base_s *ctrl);
 
     // Top-level facade — always dispatches to SLB0 reclaim ctrl (R7 fixed)
     object (*alloc)(usize size);
     void (*free)(object ptr);
     object (*realloc)(object ptr, usize new_size);
+
+    // Phase 4: custom factory + external registration (appended to preserve ABI)
+    sc_ctrl_base_s *(*create_custom)(usize size, ctrl_factory_fn factory);
+    void (*register_ctrl)(sc_ctrl_base_s *ctrl);
+    // Phase 5: diagnostics (appended to preserve ABI)
+    bool (*is_ready)(void);
 } sc_allocator_i;
 
 extern const sc_allocator_i Allocator;

@@ -34,6 +34,7 @@
 #pragma once
 
 #include <sigma.core/types.h>
+#include <sigma.core/allocator.h>
 
 // ── Opaque forward declarations ────────────────────────────────────────────
 // Full definitions live in their respective implementation headers.
@@ -101,6 +102,20 @@ typedef struct sigma_module_s {
     const char **deps;
     int (*init)(void *ctx);
     void (*shutdown)(void);
+    /**
+     * @field arena_size  Requested dedicated slab size for SIGMA_ROLE_TRUSTED modules.
+     *                    0 = use system default (256 KB).  Ignored for other roles.
+     */
+    usize arena_size;
+    /**
+     * @field arena_policy  Allocator type for the trusted module's dedicated slab.
+     *                      POLICY_RECLAIM — first-fit free list; good for arbitrary
+     *                      alloc/free (e.g. fiber stacks).
+     *                      POLICY_BUMP — frame-based; fast but only releases whole frames.
+     *                      POLICY_KERNEL is reserved for sigma.memory itself.
+     *                      0 (unset) falls back to POLICY_RECLAIM.
+     */
+    sc_alloc_policy arena_policy;
 } sigma_module_t;
 
 // ── Panic function type ────────────────────────────────────────────────────
@@ -120,8 +135,17 @@ typedef void (*sc_module_panic_fn)(const char *module_name, const char *reason);
 // ── Provider hook types ─────────────────────────────────────────────────────
 // Registered by sigma.memory's init — sigma.core has no compile-time dep on it.
 
-/** @brief Registered by sigma.memory to grant a capability to TRUSTED modules. */
-typedef sc_trusted_cap_t *(*sc_trusted_grant_fn)(const char *module_name);
+/** @brief Registered by sigma.memory to grant a capability to TRUSTED modules.
+ *
+ *  @param module_name  Name of the requesting module.
+ *  @param arena_size   Requested slab size (bytes); 0 = system default (256 KB).
+ *  @param arena_policy Requested controller policy (POLICY_RECLAIM or POLICY_BUMP);
+ *                      POLICY_KERNEL is reserved and will cause the grant to fail.
+ *  @return Heap-allocated sc_trusted_cap_t*, or NULL on failure.
+ */
+typedef sc_trusted_cap_t *(*sc_trusted_grant_fn)(const char *module_name,
+                                                 usize arena_size,
+                                                 sc_alloc_policy arena_policy);
 
 /** @brief Registered by sigma.memory to provide an arena-backed sc_alloc_use_t
  *         to SIGMA_ALLOC_ARENA modules.  Returns NULL if allocation fails. */

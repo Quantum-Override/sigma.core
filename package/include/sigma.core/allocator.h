@@ -93,6 +93,8 @@ typedef struct sc_allocator_i {
     // Phase 4: custom factory + external registration (appended to preserve ABI)
     sc_ctrl_base_s *(*create_custom)(usize size, ctrl_factory_fn factory);
     void (*register_ctrl)(sc_ctrl_base_s *ctrl);
+    // Phase 5: diagnostics (appended to preserve ABI)
+    bool (*is_ready)(void);
 } sc_allocator_i;
 
 extern const sc_allocator_i Allocator;
