@@ -33,8 +33,8 @@
  */
 #pragma once
 
-#include <sigma.core/types.h>
 #include <sigma.core/allocator.h>
+#include <sigma.core/types.h>
 
 // ── Opaque forward declarations ────────────────────────────────────────────
 // Full definitions live in their respective implementation headers.
@@ -47,17 +47,21 @@ typedef struct sc_alloc_use_s sc_alloc_use_t;      // full def in sigma.core/all
  * @brief Role determines what ctx is passed to init() and in what order modules
  *        are initialised relative to sigma.memory.
  *
- *   SYSTEM   — no deps, init(NULL); comes first in topo order.  Used by
- *              sigma.memory and sigma.core itself.
- *   TRUSTED  — init(sc_trusted_cap_t*); sigma.memory grants a full capability
- *              struct.  Used by sigma.tasking.
- *   USER     — init(ctx) where ctx is determined by the alloc field.
- *              Used by sigma.text, sigma.collections, sigma.test, etc.
+ *   SYSTEM       — no deps, init(NULL); comes first in topo order.  Used by
+ *                  sigma.memory and sigma.core itself.
+ *   TRUSTED      — init(sc_trusted_cap_t*); sigma.memory grants a full capability
+ *                  struct.  Used by sigma.tasking (Ring1 system slots).
+ *   USER         — init(ctx) where ctx is determined by the alloc field.
+ *                  Used by sigma.text, sigma.collections, etc.
+ *   TRUSTED_APP  — init(sc_trusted_cap_t*); sigma.memory grants a capability
+ *                  from the app-tier pool.  First-party modules we own and audit
+ *                  but that must not consume Ring1 system slots (e.g. sigma.test).
  */
 typedef enum {
-    SIGMA_ROLE_SYSTEM = 0,
-    SIGMA_ROLE_TRUSTED = 1,
-    SIGMA_ROLE_USER = 2,
+    SIGMA_ROLE_SYSTEM      = 0,
+    SIGMA_ROLE_TRUSTED     = 1,
+    SIGMA_ROLE_USER        = 2,
+    SIGMA_ROLE_TRUSTED_APP = 3,   /**< first-party app tier; separate cap pool */
 } sc_module_role;
 
 // ── Allocator designation ──────────────────────────────────────────────────
@@ -143,9 +147,23 @@ typedef void (*sc_module_panic_fn)(const char *module_name, const char *reason);
  *                      POLICY_KERNEL is reserved and will cause the grant to fail.
  *  @return Heap-allocated sc_trusted_cap_t*, or NULL on failure.
  */
-typedef sc_trusted_cap_t *(*sc_trusted_grant_fn)(const char *module_name,
-                                                 usize arena_size,
+typedef sc_trusted_cap_t *(*sc_trusted_grant_fn)(const char *module_name, usize arena_size,
                                                  sc_alloc_policy arena_policy);
+
+/** @brief Registered by sigma.memory to grant a capability to TRUSTED_APP modules.
+ *
+ *  Identical signature to sc_trusted_grant_fn; draws from the app-tier cap pool
+ *  rather than the Ring1 system pool.
+ *
+ *  @param module_name  Name of the requesting module.
+ *  @param arena_size   Requested slab size (bytes); 0 = system default (256 KB).
+ *  @param arena_policy Requested controller policy (POLICY_RECLAIM or POLICY_BUMP);
+ *                      POLICY_KERNEL is reserved and will cause the grant to fail.
+ *  @return Heap-allocated sc_trusted_cap_t*, or NULL on failure.
+ */
+typedef sc_trusted_cap_t *(*sc_trusted_app_grant_fn)(const char *module_name,
+                                                     usize arena_size,
+                                                     sc_alloc_policy arena_policy);
 
 /** @brief Registered by sigma.memory to provide an arena-backed sc_alloc_use_t
  *         to SIGMA_ALLOC_ARENA modules.  Returns NULL if allocation fails. */
@@ -201,6 +219,11 @@ void sigma_module_set_panic_fn(sc_module_panic_fn fn);
  * @brief Register the TRUSTED capability provider (called by sigma.memory init).
  */
 void sigma_module_set_trusted_grant(sc_trusted_grant_fn fn);
+
+/**
+ * @brief Register the TRUSTED_APP capability provider (called by sigma.memory init).
+ */
+void sigma_module_set_trusted_app_grant(sc_trusted_app_grant_fn fn);
 
 /**
  * @brief Register the ARENA allocator provider (called by sigma.memory init).

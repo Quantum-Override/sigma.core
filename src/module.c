@@ -35,8 +35,9 @@ static uint8_t init_count = 0;
 
 static bool initialized = false;
 static sc_module_panic_fn panic_fn = default_panic;
-static sc_trusted_grant_fn trusted_grant = NULL;
-static sc_arena_provider_fn arena_provider = NULL;
+static sc_trusted_grant_fn     trusted_grant     = NULL;
+static sc_trusted_app_grant_fn trusted_app_grant = NULL;
+static sc_arena_provider_fn    arena_provider    = NULL;
 
 /* stdlib hooks — thin wrappers avoid --wrap=malloc data-relocation issues */
 static void *system_alloc_wrap(usize sz) { return malloc(sz); }
@@ -84,6 +85,7 @@ const sigma_module_t *sigma_module_find(const char *name) {
 void sigma_module_set_panic_fn(sc_module_panic_fn fn) { panic_fn = fn ? fn : default_panic; }
 
 void sigma_module_set_trusted_grant(sc_trusted_grant_fn fn) { trusted_grant = fn; }
+void sigma_module_set_trusted_app_grant(sc_trusted_app_grant_fn fn) { trusted_app_grant = fn; }
 
 void sigma_module_set_arena_provider(sc_arena_provider_fn fn) { arena_provider = fn; }
 
@@ -93,8 +95,9 @@ void sigma_module_reset(void) {
     init_count = 0;
     initialized = false;
     panic_fn = default_panic;
-    trusted_grant = NULL;
-    arena_provider = NULL;
+    trusted_grant     = NULL;
+    trusted_app_grant = NULL;
+    arena_provider    = NULL;
     for (int i = 0; i < SC_MAX_MODULES; i++) {
         registry[i] = NULL;
         init_order[i] = NULL;
@@ -214,6 +217,9 @@ static int dispatch_init_all(void) {
         if (mod->role == SIGMA_ROLE_TRUSTED) {
             ctx =
                 trusted_grant ? trusted_grant(mod->name, mod->arena_size, mod->arena_policy) : NULL;
+        } else if (mod->role == SIGMA_ROLE_TRUSTED_APP) {
+            ctx =
+                trusted_app_grant ? trusted_app_grant(mod->name, mod->arena_size, mod->arena_policy) : NULL;
         } else {
             switch (mod->alloc) {
                 case SIGMA_ALLOC_SYSTEM:
