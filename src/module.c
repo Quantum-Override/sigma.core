@@ -212,7 +212,8 @@ static int dispatch_init_all(void) {
         void *ctx = NULL;
 
         if (mod->role == SIGMA_ROLE_TRUSTED) {
-            ctx = trusted_grant ? trusted_grant(mod->name) : NULL;
+            ctx =
+                trusted_grant ? trusted_grant(mod->name, mod->arena_size, mod->arena_policy) : NULL;
         } else {
             switch (mod->alloc) {
                 case SIGMA_ALLOC_SYSTEM:

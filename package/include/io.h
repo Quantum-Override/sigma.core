@@ -188,4 +188,4 @@ typedef struct sc_dir_i {
 
 /* ── Global instances ────────────────────────────────────────────────────── */
 extern const sc_file_i File;
-extern const sc_dir_i  Directory;
+extern const sc_dir_i Directory;

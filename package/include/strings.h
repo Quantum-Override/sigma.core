@@ -1,5 +1,5 @@
 /*
- * Sigma.Text
+ * Sigma.Core
  * Copyright (c) 2026 David Boarman (BadKraft) and contributors
  * QuantumOverride [Q|]
  * ----------------------------------------------
@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  * ----------------------------------------------
- * File: strings.h
- * Description: Header file for string utilities in Sigma.Text
+ * File: sigma.core/strings.h
+ * Description: Header file for string utilities in Sigma.Core
  */
 
 #pragma once

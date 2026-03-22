@@ -43,5 +43,14 @@ HEADER
 }
 
 post_pack() {
-    : # reserved
+    local pkg="$1"
+
+    # Only the all-inclusive "core" package needs to sync flat header copies.
+    [[ "$pkg" != "core" ]] && return 0
+
+    # Sync namespaced headers to the flat package/include/ layout so that cpub
+    # installs them at /usr/local/include/sigma.core/<header>.h (not nested).
+    if [ -d "package/include/sigma.core" ]; then
+        cp package/include/sigma.core/*.h package/include/
+    fi
 }
