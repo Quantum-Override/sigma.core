@@ -8,4 +8,4 @@
 #define SC_CORE_VERSION "1.0.0"
 
 /** Monotone build counter — incremented on every cpkg core run. */
-#define SC_CORE_BUILD   10
+#define SC_CORE_BUILD   12

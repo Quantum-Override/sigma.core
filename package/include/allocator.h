@@ -66,6 +66,12 @@ typedef struct sc_alloc_use_s {
     void *(*alloc)(usize size);
     void (*release)(void *ptr);
     void *(*resize)(void *ptr, usize size);
+    /** Save current cursor/sequence tag; returns FRAME_NULL on failure or if
+     *  frames are not supported.  NULL field = no frame support. */
+    frame (*frame_begin)(void);
+    /** Bulk-reclaim to the saved frame point.  frame_end(FRAME_NULL) is a no-op.
+     *  NULL field = no frame support. */
+    void (*frame_end)(frame f);
 } sc_alloc_use_t;
 
 // ── Custom controller factory function type ────────────────────────────────
