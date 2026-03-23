@@ -58,10 +58,10 @@ typedef struct sc_alloc_use_s sc_alloc_use_t;      // full def in sigma.core/all
  *                  but that must not consume Ring1 system slots (e.g. sigma.test).
  */
 typedef enum {
-    SIGMA_ROLE_SYSTEM      = 0,
-    SIGMA_ROLE_TRUSTED     = 1,
-    SIGMA_ROLE_USER        = 2,
-    SIGMA_ROLE_TRUSTED_APP = 3,   /**< first-party app tier; separate cap pool */
+    SIGMA_ROLE_SYSTEM = 0,
+    SIGMA_ROLE_TRUSTED = 1,
+    SIGMA_ROLE_USER = 2,
+    SIGMA_ROLE_TRUSTED_APP = 3, /**< first-party app tier; separate cap pool */
 } sc_module_role;
 
 // ── Allocator designation ──────────────────────────────────────────────────
@@ -161,8 +161,7 @@ typedef sc_trusted_cap_t *(*sc_trusted_grant_fn)(const char *module_name, usize 
  *                      POLICY_KERNEL is reserved and will cause the grant to fail.
  *  @return Heap-allocated sc_trusted_cap_t*, or NULL on failure.
  */
-typedef sc_trusted_cap_t *(*sc_trusted_app_grant_fn)(const char *module_name,
-                                                     usize arena_size,
+typedef sc_trusted_cap_t *(*sc_trusted_app_grant_fn)(const char *module_name, usize arena_size,
                                                      sc_alloc_policy arena_policy);
 
 /** @brief Registered by sigma.memory to provide an arena-backed sc_alloc_use_t
