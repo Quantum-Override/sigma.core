@@ -5,6 +5,8 @@
 **Status:** Phase 0 prep complete (FR-2603-sigma-core-011) — ready for toolsmith packaging  
 **Part of:** [ORCHESTRATION-BR-2603-q-or-001](../../q-or/ORCHESTRATION-BR-2603-q-or-001.md)
 
+📖 **[→ Complete Usage Guide with Examples](sigma.string.a-USAGE.md)**
+
 ---
 
 ## Overview
