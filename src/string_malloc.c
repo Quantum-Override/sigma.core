@@ -94,7 +94,7 @@ string string_copy(const string str) { return string_alloc_copy(str, string_leng
  * @param str C string to duplicate
  * @return Newly allocated string, or NULL on failure. Caller must dispose.
  */
-string string_duplicate(const char *str) { return string_alloc_copy(str, str ? strlen(str) : 0); }
+string string_dupe(const char *str) { return string_alloc_copy(str, str ? strlen(str) : 0); }
 
 /**
  * @brief Concatenates two strings
@@ -151,7 +151,7 @@ exit:
  * @param ... Variable arguments for format string
  * @return Newly allocated formatted string, or NULL on failure. Caller must dispose.
  */
-string string_format(const char *fmt, ...) {
+string string_format(string fmt, ...) {
     string result = NULL;
     va_list args;
     int len;
@@ -229,7 +229,7 @@ exit:
  * @param str Initial string content (NULL creates empty builder)
  * @return New string builder, or NULL on failure. Caller must dispose.
  */
-string_builder stringbuilder_from_string(string str) {
+string_builder stringbuilder_snew(string str) {
     string_builder sb = NULL;
     usize len;
 
@@ -282,7 +282,7 @@ exit:
  * @param fmt Format string
  * @param ... Variable arguments for format string
  */
-void stringbuilder_appendf(string_builder sb, const char *fmt, ...) {
+void stringbuilder_appendf(string_builder sb, string fmt, ...) {
     va_list args, args_copy;
     int len;
     usize required_len, needed_capacity;
@@ -344,7 +344,7 @@ void stringbuilder_lappends(string_builder sb, string str) {
  * @param fmt Format string
  * @param ... Variable arguments for format string
  */
-void stringbuilder_lappendf(string_builder sb, const char *fmt, ...) {
+void stringbuilder_lappendf(string_builder sb, string fmt, ...) {
     va_list args, args_copy;
     int len;
     usize required_len, needed_capacity;
@@ -395,7 +395,7 @@ void stringbuilder_clear(string_builder sb) {
  * @param sb String builder to convert
  * @return Newly allocated string, or NULL on failure. Caller must dispose.
  */
-string stringbuilder_to_string(string_builder sb) {
+string stringbuilder_toString(string_builder sb) {
     string result = NULL;
     usize len;
 
@@ -416,7 +416,7 @@ exit:
  * @param sb String builder to write
  * @param stream Output stream
  */
-void stringbuilder_to_stream(string_builder sb, FILE *stream) {
+void stringbuilder_toStream(string_builder sb, FILE *stream) {
     if (!sb || !sb->str || !stream) return;
     usize len = stringbuilder_length(sb);
     if (len > 0) fwrite(sb->str, 1, len, stream);
@@ -441,7 +441,7 @@ usize stringbuilder_capacity(string_builder sb) { return sb ? sb->capacity : 0; 
  * @param sb String builder to resize
  * @param new_capacity New capacity (must be larger than current)
  */
-void stringbuilder_set_capacity(string_builder sb, usize new_capacity) {
+void stringbuilder_setCapacity(string_builder sb, usize new_capacity) {
     if (!sb || new_capacity <= sb->capacity) return;
 
     if (buffer_ensure_capacity(sb->buffer, new_capacity + 1) == 0) {
@@ -558,3 +558,35 @@ static void buffer_dispose(string_buffer_s *buf) {
     if (buf->data) free(buf->data);
     free(buf);
 }
+
+/* ======================================================================== */
+/* Global vtable instances (ABI-compatible with sigma.core)                */
+/* ======================================================================== */
+
+const sc_string_i String = {
+    .length = string_length,
+    .copy = string_copy,
+    .dupe = string_dupe,
+    .concat = string_concat,
+    .format = string_format,
+    .compare = string_compare,
+    .to_array = string_to_array,
+    .dispose = string_dispose
+};
+
+const sc_stringbuilder_i StringBuilder = {
+    .new = stringbuilder_new,
+    .snew = stringbuilder_snew,
+    .append = stringbuilder_append,
+    .appendf = stringbuilder_appendf,
+    .appendl = stringbuilder_appendl,
+    .lappends = stringbuilder_lappends,
+    .lappendf = stringbuilder_lappendf,
+    .clear = stringbuilder_clear,
+    .toString = stringbuilder_toString,
+    .toStream = stringbuilder_toStream,
+    .length = stringbuilder_length,
+    .capacity = stringbuilder_capacity,
+    .setCapacity = stringbuilder_setCapacity,
+    .dispose = stringbuilder_dispose
+};
