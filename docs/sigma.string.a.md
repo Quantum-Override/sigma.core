@@ -158,8 +158,11 @@ gcc myapp.c -o myapp -lsigma_string
 ## Dependencies
 
 **Runtime:** None (libc only: malloc, free, realloc, memcpy, strlen, strcmp, strcpy, fwrite, vsnprintf)  
+**Headers:** `sigma.core/types.h` (for ABI-compatible type definitions: `string`, `usize`)  
 **Build:** gcc, ar, ranlib (standard toolchain)  
 **Test:** valgrind (optional, for leak checks)
+
+**Zero sigma.memory dependency** — no allocators, no controllers. Types from `sigma.core/types.h` ensure ABI drop-in compatibility with sigma.core ecosystem.
 
 ---
 

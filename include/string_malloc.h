@@ -35,15 +35,13 @@
  */
 #pragma once
 
-#include <stddef.h>
+#include "sigma.core/types.h"
 #include <stdio.h>
 
 /* ======================================================================== */
 /* Type Definitions                                                         */
 /* ======================================================================== */
 
-typedef char *string;
-typedef size_t usize;
 typedef struct string_builder_s *string_builder;
 
 /* ======================================================================== */
