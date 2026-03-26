@@ -32,17 +32,19 @@
 
 int main(void) {
     // Create strings
-    string greeting = string_duplicate("Hello");
-    string name = string_duplicate("World");
+    string greeting = string_dupe("Hello");
+    string name = string_dupe("World");
     
     // Combine them
-    string message = string_format("%s, %s!", greeting, name);
+    string fmt = string_dupe("%s, %s!");
+    string message = string_format(fmt, greeting, name);
     printf("%s\n", message);  // "Hello, World!"
     
     // Clean up
     string_dispose(greeting);
     string_dispose(name);
     string_dispose(message);
+    string_dispose(fmt);
     
     return 0;
 }
@@ -58,25 +60,25 @@ gcc myapp.c -o myapp -lsigma_string
 
 ## String API
 
-### string_duplicate
+### string_dupe
 
 Create a new string from a C string literal.
 
 ```c
-string str = string_duplicate("Hello, World!");
+string str = string_dupe("Hello, World!");
 printf("%s\n", str);  // "Hello, World!"
 string_dispose(str);
 ```
 
 **NULL handling:**
 ```c
-string null_str = string_duplicate(NULL);  // Returns NULL
+string null_str = string_dupe(NULL);  // Returns NULL
 // No dispose needed for NULL
 ```
 
 **Empty string:**
 ```c
-string empty = string_duplicate("");
+string empty = string_dupe("");
 printf("Length: %zu\n", string_length(empty));  // "Length: 0"
 string_dispose(empty);
 ```
@@ -88,7 +90,7 @@ string_dispose(empty);
 Duplicate an existing string (deep copy).
 
 ```c
-string original = string_duplicate("Original");
+string original = string_dupe("Original");
 string copy = string_copy(original);
 
 printf("Original: %s\n", original);  // "Original"
@@ -110,7 +112,7 @@ string_dispose(copy);
 Get the length of a string (character count, excluding null terminator).
 
 ```c
-string str = string_duplicate("Hello");
+string str = string_dupe("Hello");
 usize len = string_length(str);
 printf("Length: %zu\n", len);  // "Length: 5"
 string_dispose(str);
@@ -128,8 +130,8 @@ usize len = string_length(NULL);  // Returns 0
 Concatenate two strings into a new string.
 
 ```c
-string first = string_duplicate("Hello");
-string second = string_duplicate("World");
+string first = string_dupe("Hello");
+string second = string_dupe("World");
 string combined = string_concat(first, second);
 
 printf("%s\n", combined);  // "HelloWorld"
@@ -141,9 +143,9 @@ string_dispose(combined);
 
 **Add spacing:**
 ```c
-string space = string_duplicate(" ");
-string hello = string_duplicate("Hello");
-string world = string_duplicate("World");
+string space = string_dupe(" ");
+string hello = string_dupe("Hello");
+string world = string_dupe("World");
 
 string temp = string_concat(hello, space);
 string result = string_concat(temp, world);
@@ -164,9 +166,9 @@ string_dispose(result);
 Compare two strings (wrapper around `strcmp`).
 
 ```c
-string a = string_duplicate("apple");
-string b = string_duplicate("banana");
-string c = string_duplicate("apple");
+string a = string_dupe("apple");
+string b = string_dupe("banana");
+string c = string_dupe("apple");
 
 int cmp1 = string_compare(a, b);  // < 0 (a comes before b)
 int cmp2 = string_compare(a, c);  // == 0 (equal)
@@ -195,24 +197,28 @@ string_compare(NULL, "hello");  // < 0
 Create formatted strings (printf-style).
 
 ```c
-string name = string_duplicate("Alice");
+string name = string_dupe("Alice");
 int age = 30;
 double height = 5.7;
 
-string bio = string_format("%s is %d years old and %.1f feet tall", 
-                           name, age, height);
+string fmt = string_dupe("%s is %d years old and %.1f feet tall");
+string bio = string_format(fmt, name, age, height);
 printf("%s\n", bio);
 // "Alice is 30 years old and 5.7 feet tall"
 
 string_dispose(name);
 string_dispose(bio);
+string_dispose(fmt);
 ```
 
 **Complex formatting:**
 ```c
-string report = string_format(
+string fmt = string_dupe(
     "%-10s | %5d | %8.2f\n"
-    "%-10s | %5d | %8.2f\n",
+    "%-10s | %5d | %8.2f\n"
+);
+string report = string_format(
+    fmt,
     "Item A", 100, 1234.56,
     "Item B", 200, 9876.54
 );
@@ -222,6 +228,7 @@ Item A     |   100 |  1234.56
 Item B     |   200 |  9876.54
 */
 string_dispose(report);
+string_dispose(fmt);
 ```
 
 ---
@@ -231,7 +238,7 @@ string_dispose(report);
 Convert string to char array (creates independent copy).
 
 ```c
-string str = string_duplicate("Hello");
+string str = string_dupe("Hello");
 char *arr = string_to_array(str);
 
 printf("String: %s\n", str);  // "Hello"
@@ -255,7 +262,7 @@ free(arr);  // char arrays use free() directly
 Free string memory. Always call for allocated strings.
 
 ```c
-string str = string_duplicate("Temporary");
+string str = string_dupe("Temporary");
 // ... use str ...
 string_dispose(str);
 ```
@@ -296,16 +303,16 @@ stringbuilder_dispose(sb);
 
 ---
 
-### stringbuilder_from_string
+### stringbuilder_snew
 
 Create StringBuilder from existing string.
 
 ```c
-string initial = string_duplicate("Starting text");
-string_builder sb = stringbuilder_from_string(initial);
+string initial = string_dupe("Starting text");
+string_builder sb = stringbuilder_snew(initial);
 
 stringbuilder_append(sb, " - more content");
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 
 printf("%s\n", result);  // "Starting text - more content"
 
@@ -327,7 +334,7 @@ stringbuilder_append(sb, "Hello");
 stringbuilder_append(sb, " ");
 stringbuilder_append(sb, "World");
 
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 printf("%s\n", result);  // "Hello World"
 
 string_dispose(result);
@@ -349,10 +356,12 @@ Append formatted string (printf-style).
 string_builder sb = stringbuilder_new(0);
 
 stringbuilder_append(sb, "Report:\n");
-stringbuilder_appendf(sb, "  Count: %d\n", 42);
-stringbuilder_appendf(sb, "  Rate: %.2f%%\n", 98.5);
+string fmt1 = string_dupe("  Count: %d\n");
+stringbuilder_appendf(sb, fmt1, 42);
+string fmt2 = string_dupe("  Rate: %.2f%%\n");
+stringbuilder_appendf(sb, fmt2, 98.5);
 
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 printf("%s", result);
 /*
 Report:
@@ -361,6 +370,8 @@ Report:
 */
 
 string_dispose(result);
+string_dispose(fmt1);
+string_dispose(fmt2);
 stringbuilder_dispose(sb);
 ```
 
@@ -377,7 +388,7 @@ stringbuilder_appendl(sb, "Line 1");
 stringbuilder_appendl(sb, "Line 2");
 stringbuilder_appendl(sb, "Line 3");
 
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 printf("%s", result);
 /*
 Line 1
@@ -406,7 +417,7 @@ stringbuilder_lappends(sb,
     NULL  // ⚠️ MUST end with NULL
 );
 
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 printf("%s", result);
 /*
 Header
@@ -429,12 +440,13 @@ Append formatted line (printf-style with newline).
 
 ```c
 string_builder sb = stringbuilder_new(0);
+string fmt = string_dupe("Item %d: Value = %d");
 
 for (int i = 0; i < 3; i++) {
-    stringbuilder_lappendf(sb, "Item %d: Value = %d", i, i * 10);
+    stringbuilder_lappendf(sb, fmt, i, i * 10);
 }
 
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 printf("%s", result);
 /*
 Item 0: Value = 0
@@ -443,6 +455,7 @@ Item 2: Value = 20
 */
 
 string_dispose(result);
+string_dispose(fmt);
 stringbuilder_dispose(sb);
 ```
 
@@ -457,14 +470,14 @@ string_builder sb = stringbuilder_new(128);
 
 // Build first message
 stringbuilder_append(sb, "First message");
-string msg1 = stringbuilder_to_string(sb);
+string msg1 = stringbuilder_toString(sb);
 printf("%s\n", msg1);
 string_dispose(msg1);
 
 // Reuse builder
 stringbuilder_clear(sb);
 stringbuilder_append(sb, "Second message");
-string msg2 = stringbuilder_to_string(sb);
+string msg2 = stringbuilder_toString(sb);
 printf("%s\n", msg2);
 string_dispose(msg2);
 
@@ -475,7 +488,7 @@ stringbuilder_dispose(sb);
 
 ---
 
-### stringbuilder_to_string
+### stringbuilder_toString
 
 Extract final string from builder (creates copy).
 
@@ -483,12 +496,12 @@ Extract final string from builder (creates copy).
 string_builder sb = stringbuilder_new(0);
 stringbuilder_append(sb, "Content");
 
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 printf("%s\n", result);  // "Content"
 
 // Builder still valid, can keep using
 stringbuilder_append(sb, " More");
-string result2 = stringbuilder_to_string(sb);
+string result2 = stringbuilder_toString(sb);
 printf("%s\n", result2);  // "Content More"
 
 string_dispose(result);
@@ -498,7 +511,7 @@ stringbuilder_dispose(sb);
 
 ---
 
-### stringbuilder_to_stream
+### stringbuilder_toStream
 
 Write builder content to FILE stream (no allocation).
 
@@ -510,12 +523,12 @@ stringbuilder_appendl(sb, "Log entry 2");
 // Write to file
 FILE *f = fopen("output.log", "w");
 if (f) {
-    stringbuilder_to_stream(sb, f);
+    stringbuilder_toStream(sb, f);
     fclose(f);
 }
 
 // Write to stdout
-stringbuilder_to_stream(sb, stdout);
+stringbuilder_toStream(sb, stdout);
 
 stringbuilder_dispose(sb);
 ```
@@ -555,7 +568,7 @@ stringbuilder_dispose(sb);
 
 ---
 
-### stringbuilder_set_capacity
+### stringbuilder_setCapacity
 
 Manually set buffer capacity (grow or shrink).
 
@@ -564,11 +577,11 @@ string_builder sb = stringbuilder_new(16);
 printf("Initial: %zu\n", stringbuilder_capacity(sb));  // 16
 
 // Grow
-stringbuilder_set_capacity(sb, 128);
+stringbuilder_setCapacity(sb, 128);
 printf("After grow: %zu\n", stringbuilder_capacity(sb));  // 128
 
 // Shrink (keeps content if it fits)
-stringbuilder_set_capacity(sb, 32);
+stringbuilder_setCapacity(sb, 32);
 printf("After shrink: %zu\n", stringbuilder_capacity(sb));  // 32
 
 stringbuilder_dispose(sb);
@@ -603,14 +616,18 @@ stringbuilder_dispose(NULL);  // Safe, no-op
 string_builder query = stringbuilder_new(256);
 
 stringbuilder_append(query, "SELECT * FROM users WHERE ");
-stringbuilder_appendf(query, "age > %d AND ", 18);
-stringbuilder_appendf(query, "country = '%s'", "US");
+string fmt1 = string_dupe("age > %d AND ");
+stringbuilder_appendf(query, fmt1, 18);
+string fmt2 = string_dupe("country = '%s'");
+stringbuilder_appendf(query, fmt2, "US");
 
-string sql = stringbuilder_to_string(query);
+string sql = stringbuilder_toString(query);
 printf("%s\n", sql);
 // "SELECT * FROM users WHERE age > 18 AND country = 'US'"
 
 string_dispose(sql);
+string_dispose(fmt1);
+string_dispose(fmt2);
 stringbuilder_dispose(query);
 ```
 
@@ -622,15 +639,19 @@ stringbuilder_dispose(query);
 string_builder json = stringbuilder_new(0);
 
 stringbuilder_appendl(json, "{");
-stringbuilder_lappendf(json, "  \"name\": \"%s\",", "Alice");
-stringbuilder_lappendf(json, "  \"age\": %d,", 30);
+string fmt1 = string_dupe("  \"name\": \"%s\",");
+stringbuilder_lappendf(json, fmt1, "Alice");
+string fmt2 = string_dupe("  \"age\": %d,");
+stringbuilder_lappendf(json, fmt2, 30);
 stringbuilder_appendl(json, "  \"active\": true");
 stringbuilder_append(json, "}");
 
-string result = stringbuilder_to_string(json);
+string result = stringbuilder_toString(json);
 printf("%s\n", result);
 
 string_dispose(result);
+string_dispose(fmt1);
+string_dispose(fmt2);
 stringbuilder_dispose(json);
 ```
 
@@ -649,17 +670,19 @@ const char *names[] = {"Alice", "Bob", "Carol"};
 int ages[] = {25, 30, 28};
 double scores[] = {95.5, 87.3, 92.1};
 
+string fmt = string_dupe("%s,%d,%.1f");
 for (int i = 0; i < 3; i++) {
-    stringbuilder_lappendf(csv, "%s,%d,%.1f", 
+    stringbuilder_lappendf(csv, fmt, 
                            names[i], ages[i], scores[i]);
 }
 
 // Write to file
 FILE *f = fopen("data.csv", "w");
 if (f) {
-    stringbuilder_to_stream(csv, f);
+    stringbuilder_toStream(csv, f);
     fclose(f);
 }
+string_dispose(fmt);
 
 stringbuilder_dispose(csv);
 ```
@@ -672,16 +695,22 @@ stringbuilder_dispose(csv);
 string_builder config = stringbuilder_new(512);
 
 stringbuilder_appendl(config, "[server]");
-stringbuilder_lappendf(config, "host = %s", "localhost");
-stringbuilder_lappendf(config, "port = %d", 8080);
+string fmt1 = string_dupe("host = %s");
+stringbuilder_lappendf(config, fmt1, "localhost");
+string fmt2 = string_dupe("port = %d");
+stringbuilder_lappendf(config, fmt2, 8080);
 stringbuilder_appendl(config, "");
 stringbuilder_appendl(config, "[database]");
-stringbuilder_lappendf(config, "url = %s", "postgresql://localhost/mydb");
+string fmt3 = string_dupe("url = %s");
+stringbuilder_lappendf(config, fmt3, "postgresql://localhost/mydb");
 
-string result = stringbuilder_to_string(config);
+string result = stringbuilder_toString(config);
 printf("%s\n", result);
 
 string_dispose(result);
+string_dispose(fmt1);
+string_dispose(fmt2);
+string_dispose(fmt3);
 stringbuilder_dispose(config);
 ```
 
@@ -690,10 +719,10 @@ stringbuilder_dispose(config);
 ### Path Manipulation
 
 ```c
-string base = string_duplicate("/home/user");
-string sep = string_duplicate("/");
-string dir = string_duplicate("documents");
-string file = string_duplicate("readme.txt");
+string base = string_dupe("/home/user");
+string sep = string_dupe("/");
+string dir = string_dupe("documents");
+string file = string_dupe("readme.txt");
 
 // Build path
 string temp1 = string_concat(base, sep);
@@ -722,7 +751,7 @@ stringbuilder_append(sb, "documents");
 stringbuilder_append(sb, "/");
 stringbuilder_append(sb, "readme.txt");
 
-string path = stringbuilder_to_string(sb);
+string path = stringbuilder_toString(sb);
 printf("%s\n", path);
 
 string_dispose(path);
@@ -737,7 +766,7 @@ stringbuilder_dispose(sb);
 
 1. **Always dispose heap-allocated strings:**
    ```c
-   string str = string_duplicate("text");
+   string str = string_dupe("text");
    string_dispose(str);  // ✅ Required
    ```
 
@@ -755,7 +784,7 @@ stringbuilder_dispose(sb);
 
 4. **One allocation = one disposal:**
    ```c
-   string a = string_duplicate("text");
+   string a = string_dupe("text");
    string b = string_copy(a);
    string_dispose(a);  // ✅
    string_dispose(b);  // ✅
@@ -767,16 +796,18 @@ stringbuilder_dispose(sb);
 
 **Caller owns returned strings:**
 ```c
-string result = string_format("Value: %d", 42);
+string fmt = string_dupe("Value: %d");
+string result = string_format(fmt, 42);
 // Caller must dispose
 string_dispose(result);
+string_dispose(fmt);
 ```
 
 **StringBuilder extract creates copy:**
 ```c
 string_builder sb = stringbuilder_new(0);
 stringbuilder_append(sb, "text");
-string s = stringbuilder_to_string(sb);  // Creates new allocation
+string s = stringbuilder_toString(sb);  // Creates new allocation
 // Now have 2 independent allocations
 string_dispose(s);
 stringbuilder_dispose(sb);
@@ -792,12 +823,16 @@ int process_data(const char *input) {
     string a = NULL;
     string b = NULL;
     string result = NULL;
+    string fmt = NULL;
     int status = -1;
     
-    a = string_duplicate(input);
+    a = string_dupe(input);
     if (!a) goto cleanup;
     
-    b = string_format("Processed: %s", a);
+    fmt = string_dupe("Processed: %s");
+    if (!fmt) goto cleanup;
+    
+    b = string_format(fmt, a);
     if (!b) goto cleanup;
     
     result = string_concat(a, b);
@@ -810,6 +845,7 @@ cleanup:
     string_dispose(a);
     string_dispose(b);
     string_dispose(result);
+    string_dispose(fmt);
     return status;
 }
 ```
@@ -889,7 +925,7 @@ clean:
 Most functions return `NULL` on allocation failure:
 
 ```c
-string str = string_duplicate("text");
+string str = string_dupe("text");
 if (!str) {
     fprintf(stderr, "Allocation failed\n");
     return -1;
@@ -935,7 +971,7 @@ if (!sb) {
 
 // ... use sb ...
 
-string result = stringbuilder_to_string(sb);
+string result = stringbuilder_toString(sb);
 if (!result) {
     fprintf(stderr, "Failed to extract string\n");
     stringbuilder_dispose(sb);
@@ -956,13 +992,13 @@ stringbuilder_dispose(sb);
 
 | Function | Description |
 |----------|-------------|
-| `string_duplicate(cstr)` | Create string from C string |
+| `string_dupe(cstr)` | Create string from C string |
 | `string_copy(src)` | Duplicate existing string |
 | `string_dispose(s)` | Free string memory |
 | `string_length(s)` | Get string length |
 | `string_concat(s1, s2)` | Concatenate strings |
 | `string_compare(s1, s2)` | Compare strings |
-| `string_format(fmt, ...)` | Create formatted string |
+| `string_format(fmt, ...)` | Create formatted string (fmt is string) |
 | `string_to_array(s)` | Convert to char array |
 
 ---
@@ -972,19 +1008,19 @@ stringbuilder_dispose(sb);
 | Function | Description |
 |----------|-------------|
 | `stringbuilder_new(capacity)` | Create new builder |
-| `stringbuilder_from_string(str)` | Create from string |
+| `stringbuilder_snew(str)` | Create from string |
 | `stringbuilder_dispose(sb)` | Free builder |
 | `stringbuilder_append(sb, str)` | Append string |
-| `stringbuilder_appendf(sb, fmt, ...)` | Append formatted |
+| `stringbuilder_appendf(sb, fmt, ...)` | Append formatted (fmt is string) |
 | `stringbuilder_appendl(sb, line)` | Append line |
 | `stringbuilder_lappends(sb, ...)` | Append multiple lines |
-| `stringbuilder_lappendf(sb, fmt, ...)` | Append formatted line |
+| `stringbuilder_lappendf(sb, fmt, ...)` | Append formatted line (fmt is string) |
 | `stringbuilder_clear(sb)` | Clear content |
-| `stringbuilder_to_string(sb)` | Extract string |
-| `stringbuilder_to_stream(sb, file)` | Write to stream |
+| `stringbuilder_toString(sb)` | Extract string |
+| `stringbuilder_toStream(sb, file)` | Write to stream |
 | `stringbuilder_length(sb)` | Get content length |
 | `stringbuilder_capacity(sb)` | Get buffer capacity |
-| `stringbuilder_set_capacity(sb, cap)` | Set capacity |
+| `stringbuilder_setCapacity(sb, cap)` | Set capacity |
 
 ---
 

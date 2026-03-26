@@ -24,18 +24,20 @@
 
 ## API Functions (22 total)
 
+**ABI-compatible with sigma.core/strings.h** — functions match vtable signatures exactly for drop-in compatibility.
+
 ### String API (8 functions)
 
 #### String Lifecycle
-- `string string_duplicate(const char *cstr)` — Create string from C string
-- `string string_copy(const string src)` — Duplicate existing string
+- `string string_dupe(const char *cstr)` — Create string from C string
+- `string string_copy(string src)` — Duplicate existing string
 - `void string_dispose(string s)` — Free string memory
 
 #### String Operations
-- `usize string_length(const string s)` — Get string length
-- `string string_concat(const string s1, const string s2)` — Concatenate two strings
-- `int string_compare(const string s1, const string s2)` — Compare strings (strcmp wrapper)
-- `string string_format(const char *fmt, ...)` — Create formatted string (printf-style)
+- `usize string_length(string s)` — Get string length
+- `string string_concat(string s1, string s2)` — Concatenate two strings
+- `int string_compare(string s1, string s2)` — Compare strings (strcmp wrapper)
+- `string string_format(string fmt, ...)` — Create formatted string (printf-style)
 
 #### Utilities
 - `char *string_to_array(string s)` — Copy string to char array
@@ -44,25 +46,39 @@
 
 #### StringBuilder Lifecycle
 - `string_builder stringbuilder_new(usize capacity)` — Create new builder (0 defaults to 16)
-- `string_builder stringbuilder_from_string(string str)` — Create builder from existing string
+- `string_builder stringbuilder_snew(string str)` — Create builder from existing string
 - `void stringbuilder_dispose(string_builder sb)` — Free builder memory
 
 #### StringBuilder Operations
 - `void stringbuilder_append(string_builder sb, string str)` — Append string
-- `void stringbuilder_appendf(string_builder sb, const char *fmt, ...)` — Append formatted string
+- `void stringbuilder_appendf(string_builder sb, string fmt, ...)` — Append formatted string
 - `void stringbuilder_appendl(string_builder sb, string str)` — Append string + newline
 - `void stringbuilder_lappends(string_builder sb, string str)` — Append newline + string
-- `void stringbuilder_lappendf(string_builder sb, const char *fmt, ...)` — Append newline + formatted string
+- `void stringbuilder_lappendf(string_builder sb, string fmt, ...)` — Append newline + formatted string
 - `void stringbuilder_clear(string_builder sb)` — Reset to empty
 
 #### StringBuilder Conversion
-- `string stringbuilder_to_string(string_builder sb)` — Convert to new string
-- `void stringbuilder_to_stream(string_builder sb, FILE *stream)` — Write to stream
+- `string stringbuilder_toString(string_builder sb)` — Convert to new string
+- `void stringbuilder_toStream(string_builder sb, FILE *stream)` — Write to stream
 
 #### StringBuilder Queries
 - `usize stringbuilder_length(string_builder sb)` — Get current length
 - `usize stringbuilder_capacity(string_builder sb)` — Get current capacity
-- `void stringbuilder_set_capacity(string_builder sb, usize new_capacity)` — Set capacity
+- `void stringbuilder_setCapacity(string_builder sb, usize new_capacity)` — Set capacity
+
+### VTable Usage
+
+**Direct calls:**
+```c
+string s = string_dupe("hello");
+string_dispose(s);
+```
+
+**VTable calls (ABI-compatible with controller variant):**
+```c
+string s = String.dupe("hello");
+String.dispose(s);
+```
 
 **Memory rule:** All functions returning `string` or `string_builder` allocate memory — caller must dispose.
 
@@ -105,7 +121,7 @@ gcc test/standalone/test_string_malloc.c build/string_malloc.o \
 # ==============================================
 # 
 # --- String Tests ---
-# Running: string_duplicate ... ✓
+# Running: string_dupe ... ✓
 # Running: string_copy ... ✓
 # Running: string_length ... ✓
 # Running: string_concat ... ✓
@@ -117,14 +133,14 @@ gcc test/standalone/test_string_malloc.c build/string_malloc.o \
 # 
 # --- StringBuilder Tests ---
 # Running: stringbuilder_new ... ✓
-# Running: stringbuilder_from_string ... ✓
+# Running: stringbuilder_snew ... ✓
 # Running: stringbuilder_append ... ✓
 # Running: stringbuilder_appendf ... ✓
 # Running: stringbuilder_appendl ... ✓
 # Running: stringbuilder_lappends ... ✓
 # Running: stringbuilder_lappendf ... ✓
 # Running: stringbuilder_clear ... ✓
-# Running: stringbuilder_to_string ... ✓
+# Running: stringbuilder_toString ... ✓
 # Running: stringbuilder_capacity ... ✓
 # Running: stringbuilder_dispose (NULL safe) ... ✓
 # Running: stringbuilder lifecycle ... ✓
@@ -170,20 +186,20 @@ gcc myapp.c -o myapp -lsigma_string
 
 ## Usage Examples
 
-### String Example
+### String Example (Direct Calls)
 ```c
 #include <sigma/string_malloc.h>
 #include <stdio.h>
 
 int main(void) {
-    string greeting = string_duplicate("Hello");
-    string target = string_duplicate("world");
+    string greeting = string_dupe("Hello");
+    string target = string_dupe("world");
     string message = string_concat(greeting, target);
     
     printf("%s\n", message);  // "Helloworld"
     
-    string formatted = string_format("Length: %zu", string_length(message));
-    printf("%s\n", formatted);  // "Length: 10"
+    string formatted = string_format(message);  // Note: fmt is string, not const char*
+    printf("%s\n", formatted);  // "Helloworld"
     
     // Cleanup
     string_dispose(greeting);
@@ -195,7 +211,29 @@ int main(void) {
 }
 ```
 
-### StringBuilder Example
+### String Example (VTable calls)
+```c
+#include <sigma/string_malloc.h>
+#include <stdio.h>
+
+int main(void) {
+    string greeting = String.dupe("Hello");
+    string target = String.dupe("world");
+    string message = String.concat(greeting, target);
+    
+    printf("Length: %zu\n", String.length(message));  // "Length: 10"
+    printf("Compare: %d\n", String.compare(greeting, target));  // non-zero
+    
+    // Cleanup
+    String.dispose(greeting);
+    String.dispose(target);
+    String.dispose(message);
+    
+    return 0;
+}
+```
+
+### StringBuilder Example (Direct Calls)
 ```c
 #include <sigma/string_malloc.h>
 #include <stdio.h>
@@ -204,16 +242,41 @@ int main(void) {
     string_builder sb = stringbuilder_new(64);
     
     stringbuilder_append(sb, "Hello");
-    stringbuilder_appendf(sb, " %s", "World");
+    string fmt = string_dupe(" %s");
+    stringbuilder_appendf(sb, fmt, "World");  // Note: fmt is string
+    string_dispose(fmt);
+    
     stringbuilder_appendl(sb, "!");
     stringbuilder_appendl(sb, "Second line");
     
-    string result = stringbuilder_to_string(sb);
+    string result = stringbuilder_toString(sb);
     printf("%s\n", result);  // "Hello World!\nSecond line\n"
     
     // Cleanup
     string_dispose(result);
     stringbuilder_dispose(sb);
+    
+    return 0;
+}
+```
+
+### StringBuilder Example (VTable Calls)
+```c
+#include <sigma/string_malloc.h>
+#include <stdio.h>
+
+int main(void) {
+    string_builder sb = StringBuilder.new(64);
+    
+    StringBuilder.append(sb, "Line 1");
+    StringBuilder.appendl(sb, "Line 2");
+    
+    string result = StringBuilder.toString(sb);
+    StringBuilder.toStream(sb, stdout);  // Write directly to stdout
+    
+    // Cleanup
+    String.dispose(result);
+    StringBuilder.dispose(sb);
     
     return 0;
 }
