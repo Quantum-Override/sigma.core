@@ -131,7 +131,7 @@ void test_to_array(void) {
     char *nullArr = String.to_array(NULL);
     Assert.isNull(nullArr, "to_array of NULL should be NULL");
 
-    Allocator.free(arr);  // to_array returns allocated memory
+    Allocator.dispose(arr);  // to_array returns allocated memory
 }
 
 // Register tests

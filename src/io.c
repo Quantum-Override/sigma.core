@@ -58,7 +58,7 @@ static void tx_free(sc_alloc_use_t *use, void *ptr) {
         use->release(ptr);
         return;
     }
-    Allocator.free(ptr);
+    Allocator.dispose(ptr);
 }
 static void *tx_realloc(sc_alloc_use_t *use, void *ptr, usize size) {
     if (use && use->resize) return use->resize(ptr, size);

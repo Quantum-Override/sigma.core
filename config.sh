@@ -42,8 +42,9 @@ TST_LDFLAGS="-Wl,--wrap=malloc -Wl,--wrap=free"
 REQUIRES=()
 
 # TST_REQUIRES: packages linked into test binaries by rtest/ctest.
-# Note: sigma.memory.o already bundles sigma.collections — do not list both.
-TST_REQUIRES=("sigma.memory" "sigma.test")
+# NOTE: sigma.core uses mock_allocator.c (test/) instead of sigma.memory
+# to avoid ABI conflicts during FR-005 ctrl field migration.
+TST_REQUIRES=("sigma.test")
 
 # LOCAL_PACKAGES_DIR: when set, rtest checks this directory for package objects
 # *before* /usr/local/packages/. Use for dev builds where installed packages
@@ -58,11 +59,11 @@ TEST_DIR=test
 TST_BUILD_DIR="$BUILD_DIR/test"
 
 # Bundle definitions: space-separated list of source names (without .c)
-CORE_SOURCES="time guid module strings io"
+CORE_SOURCES="time guid module application strings io"
 
 # rtest: explicit source list (src/ flat layout, not src/core/ or src/utilities/)
-ANVIL_SOURCES=("$SRC_DIR/time.c" "$SRC_DIR/guid.c" "$SRC_DIR/module.c" "$SRC_DIR/strings.c" "$SRC_DIR/io.c")
-ANVIL_OBJECTS=("$BUILD_DIR/time.o" "$BUILD_DIR/guid.o" "$BUILD_DIR/module.o" "$BUILD_DIR/strings.o" "$BUILD_DIR/io.o")
+ANVIL_SOURCES=("$SRC_DIR/time.c" "$SRC_DIR/guid.c" "$SRC_DIR/module.c" "$SRC_DIR/application.c" "$SRC_DIR/strings.c" "$SRC_DIR/io.c")
+ANVIL_OBJECTS=("$BUILD_DIR/time.o" "$BUILD_DIR/guid.o" "$BUILD_DIR/module.o" "$BUILD_DIR/application.o" "$BUILD_DIR/strings.o" "$BUILD_DIR/io.o")
 
 # Build target definitions: associative array mapping targets to commands
 # See BUILDING.md for option details

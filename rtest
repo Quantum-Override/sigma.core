@@ -95,11 +95,25 @@ fi
 
 # Compile library objects once
 compile_library_objects() {
-    SOURCES=("$SRC_DIR"/*.c)
+    # Use ANVIL_SOURCES if defined, otherwise fall back to wildcard
+    if [ ${#ANVIL_SOURCES[@]} -gt 0 ]; then
+        SOURCES=("${ANVIL_SOURCES[@]}")
+    else
+        SOURCES=("$SRC_DIR"/*.c)
+    fi
+    
+    # Add mock_allocator.c for testing (provides Allocator facade)
+    SOURCES+=("$TEST_DIR/mock_allocator.c")
+    
     OBJECTS=()
     
     for src in "${SOURCES[@]}"; do
-        obj="${src/$SRC_DIR/$TST_BUILD_DIR}"
+        # Handle test/ sources specially
+        if [[ "$src" == "$TEST_DIR"/* ]]; then
+            obj="${src/$TEST_DIR/$TST_BUILD_DIR}"
+        else
+            obj="${src/$SRC_DIR/$TST_BUILD_DIR}"
+        fi
         obj="${obj%.c}.o"
         
         # Check if recompile is needed
