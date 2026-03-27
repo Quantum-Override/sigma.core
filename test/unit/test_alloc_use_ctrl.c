@@ -93,12 +93,10 @@ void test_cast_use_to_ctrl(void) {
 
     // Cast use pointer to ctrl pointer
     sc_alloc_use_t *use_ptr = &use;
-    sc_ctrl_base_s *ctrl_ptr = (sc_ctrl_base_s *)use_ptr;
 
-    // Because ctrl is first member, casting use* to ctrl* should give us ctrl field value
-    // This cast pattern works: *(sc_ctrl_base_s**)use_ptr == use_ptr->ctrl
-    Assert.isTrue(ctrl_ptr == use.ctrl,
-                  "Casting sc_alloc_use_t* to sc_ctrl_base_s* should preserve ctrl pointer");
+    // Because ctrl is first member at offset 0, dereferencing use_ptr as ctrl** gives ctrl value
+    Assert.isTrue(*(sc_ctrl_base_s **)use_ptr == use.ctrl,
+                  "Dereferencing sc_alloc_use_t* as sc_ctrl_base_s** should yield ctrl pointer");
 }
 
 // TC4: Cast compatibility (sc_ctrl_base_s* → sc_alloc_use_t*)
