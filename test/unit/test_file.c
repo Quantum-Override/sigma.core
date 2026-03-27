@@ -25,7 +25,6 @@
  * Description: Test suite for File interface
  */
 #include <sigma.core/io.h>
-#include <sigma.memory/internal/memory.h>
 #include <sigma.test/sigtest.h>
 #include <stdio.h>
 #include <string.h>
@@ -198,8 +197,7 @@ void test_flush(void) {
     unlink(TMP_FILE);
 }
 
-__attribute__((constructor)) void init_file_tests(void) {
-    init_memory_system();
+static void register_file_tests(void) {
     testset("io_file_set", set_config, set_teardown);
 
     testcase("File.exists false", test_exists_false);
@@ -212,4 +210,8 @@ __attribute__((constructor)) void init_file_tests(void) {
     testcase("File seek", test_seek);
     testcase("File remove", test_remove);
     testcase("File flush", test_flush);
+}
+
+__attribute__((constructor)) static void enqueue_file_tests(void) {
+    Tests.enqueue(register_file_tests);
 }

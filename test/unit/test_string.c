@@ -26,7 +26,6 @@
  */
 #include <sigma.core/strings.h>
 #include <sigma.test/sigtest.h>
-#include <sigma.memory/internal/memory.h>
 #include <string.h>
 
 void set_config(FILE **log_stream) { *log_stream = fopen("logs/test_string.log", "w"); }
@@ -136,8 +135,7 @@ void test_to_array(void) {
 }
 
 // Register tests
-__attribute__((constructor)) void init_strings_tests(void) {
-    init_memory_system();
+static void register_strings_tests(void) {
     testset("text_strings_set", set_config, set_teardown);
 
     testcase("String length", test_get_length);
@@ -147,4 +145,8 @@ __attribute__((constructor)) void init_strings_tests(void) {
     testcase("String format", test_format_string);
     testcase("String dupe", test_dupe_string);
     testcase("String to array", test_to_array);
+}
+
+__attribute__((constructor)) static void enqueue_strings_tests(void) {
+    Tests.enqueue(register_strings_tests);
 }

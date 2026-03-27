@@ -33,7 +33,6 @@
 #include <sigma.core/allocator.h>
 #include <sigma.core/application.h>
 #include <sigma.test/sigtest.h>
-#include <sigma.memory/internal/memory.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -162,11 +161,16 @@ void test_get_allocator_thread_safe(void) {
 }
 
 // Register tests
-__attribute__((constructor)) void init_application_tests(void) {    init_memory_system();    testset("application_allocator_api", NULL, NULL);
+static void register_application_tests(void) {
+    testset("application_allocator_api", NULL, NULL);
 
     testcase("Set and get allocator", test_set_get_allocator);
     testcase("Default SLB0 fallback", test_default_slb0_fallback);
     testcase("Double-init assert", test_double_init_assert);
     testcase("Reset to default with NULL", test_reset_to_default);
     testcase("Thread-safe get_allocator", test_get_allocator_thread_safe);
+}
+
+__attribute__((constructor)) static void enqueue_application_tests(void) {
+    Tests.enqueue(register_application_tests);
 }

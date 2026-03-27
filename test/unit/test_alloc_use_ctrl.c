@@ -32,7 +32,6 @@
 
 #include <sigma.core/allocator.h>
 #include <sigma.test/sigtest.h>
-#include <sigma.memory/internal/memory.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -146,8 +145,7 @@ void test_null_ctrl_valid(void) {
 }
 
 // Register tests
-__attribute__((constructor)) void init_alloc_use_ctrl_tests(void) {
-    init_memory_system();
+static void register_alloc_use_ctrl_tests(void) {
     testset("alloc_use_ctrl_field", NULL, NULL);
 
     testcase("ctrl field at offset 0", test_ctrl_offset_zero);
@@ -155,4 +153,8 @@ __attribute__((constructor)) void init_alloc_use_ctrl_tests(void) {
     testcase("Cast use* to ctrl*", test_cast_use_to_ctrl);
     testcase("Cast ctrl* to use* (round-trip)", test_cast_ctrl_to_use);
     testcase("NULL ctrl valid for non-controller hooks", test_null_ctrl_valid);
+}
+
+__attribute__((constructor)) static void enqueue_alloc_use_ctrl_tests(void) {
+    Tests.enqueue(register_alloc_use_ctrl_tests);
 }
