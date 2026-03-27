@@ -24,9 +24,7 @@
  * File: io.c
  * Description: Implementation of File and Directory interfaces for Sigma.Core
  *
- * All string allocations route through the shared s_io_use hook (with fallback
- * to the global Allocator) via tx_alloc / tx_free / tx_realloc helpers —
- * identical to the pattern used in strings.c.
+ * All allocations use Allocator.* directly (controller scope set by entry point).
  *
  * POSIX backing: fopen/fclose/fread/fwrite/fseek/fflush/unlink/stat/
  *                opendir/readdir/closedir
@@ -41,29 +39,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-/* ======================================================================== */
-/* Allocator dispatch state                                                 */
-/* ======================================================================== */
-
-/* Shared hook for both File and Directory string allocations.              */
-static sc_alloc_use_t *s_io_use = NULL;
-
-static void *tx_alloc(sc_alloc_use_t *use, usize size) {
-    if (use && use->alloc) return use->alloc(size);
-    return Allocator.alloc(size);
-}
-static void tx_free(sc_alloc_use_t *use, void *ptr) {
-    if (use && use->release) {
-        use->release(ptr);
-        return;
-    }
-    Allocator.dispose(ptr);
-}
-static void *tx_realloc(sc_alloc_use_t *use, void *ptr, usize size) {
-    if (use && use->resize) return use->resize(ptr, size);
-    return Allocator.realloc(ptr, size);
-}
 
 /* ======================================================================== */
 /* Opaque struct definitions                                                */
@@ -89,7 +64,6 @@ static integer file_size(const string path);
 static bool file_exists(const string path);
 static integer file_remove(const string path);
 static void file_dispose(string s);
-static void file_alloc_use(sc_alloc_use_t *use);
 
 /* ======================================================================== */
 /* Forward declarations — Directory API                                     */
@@ -119,7 +93,7 @@ static sc_file_t file_open(const string path, const string mode) {
     FILE *fp = fopen(path, mode);
     if (!fp) return NULL;
 
-    sc_file_t f = tx_alloc(s_io_use, sizeof(struct sc_file_s));
+    sc_file_t f = Allocator.alloc(sizeof(struct sc_file_s));
     if (!f) {
         fclose(fp);
         return NULL;
@@ -131,18 +105,18 @@ static sc_file_t file_open(const string path, const string mode) {
 static void file_close(sc_file_t f) {
     if (!f) return;
     if (f->fp) fclose(f->fp);
-    tx_free(s_io_use, f);
+    Allocator.dispose(f);
 }
 
 static string file_read(sc_file_t f, usize limit, usize *out_size) {
     if (!f || !f->fp || limit == 0) return NULL;
 
-    string buf = tx_alloc(s_io_use, limit + 1);
+    string buf = Allocator.alloc(limit + 1);
     if (!buf) return NULL;
 
     usize got = fread(buf, 1, limit, f->fp);
     if (got == 0) {
-        tx_free(s_io_use, buf);
+        Allocator.dispose(buf);
         return NULL;
     }
     buf[got] = '\0';
@@ -155,16 +129,16 @@ static string file_read_line(sc_file_t f) {
 
     usize cap = 128;
     usize len = 0;
-    string buf = tx_alloc(s_io_use, cap);
+    string buf = Allocator.alloc(cap);
     if (!buf) return NULL;
 
     int c;
     while ((c = fgetc(f->fp)) != EOF) {
         if (len + 1 >= cap) {
             usize new_cap = cap * 2;
-            string grown = tx_realloc(s_io_use, buf, new_cap);
+            string grown = Allocator.realloc(buf, new_cap);
             if (!grown) {
-                tx_free(s_io_use, buf);
+                Allocator.dispose(buf);
                 return NULL;
             }
             buf = grown;
@@ -175,7 +149,7 @@ static string file_read_line(sc_file_t f) {
     }
 
     if (len == 0 && c == EOF) {
-        tx_free(s_io_use, buf);
+        Allocator.dispose(buf);
         return NULL;
     }
     buf[len] = '\0';
@@ -223,9 +197,7 @@ static integer file_remove(const string path) {
     return (unlink(path) == 0) ? OK : ERR;
 }
 
-static void file_dispose(string s) { tx_free(s_io_use, s); }
-
-static void file_alloc_use(sc_alloc_use_t *use) { s_io_use = use; }
+static void file_dispose(string s) { Allocator.dispose(s); }
 
 /* ======================================================================== */
 /* Directory API implementation                                             */
@@ -250,7 +222,7 @@ static string *dir_list(const string path) {
 
     usize cap = 16;
     usize count = 0;
-    string *entries = tx_alloc(s_io_use, (cap + 1) * sizeof(string));
+    string *entries = Allocator.alloc((cap + 1) * sizeof(string));
     if (!entries) {
         closedir(dh);
         return NULL;
@@ -264,7 +236,7 @@ static string *dir_list(const string path) {
             continue;
 
         usize nlen = strlen(de->d_name);
-        string name = tx_alloc(s_io_use, nlen + 1);
+        string name = Allocator.alloc(nlen + 1);
         if (!name) {
             dir_dispose_list(entries);
             closedir(dh);
@@ -274,9 +246,9 @@ static string *dir_list(const string path) {
 
         if (count >= cap) {
             usize new_cap = cap * 2;
-            string *grown = tx_realloc(s_io_use, entries, (new_cap + 1) * sizeof(string));
+            string *grown = Allocator.realloc(entries, (new_cap + 1) * sizeof(string));
             if (!grown) {
-                tx_free(s_io_use, name);
+                Allocator.dispose(name);
                 dir_dispose_list(entries);
                 closedir(dh);
                 return NULL;
@@ -300,8 +272,8 @@ static void dir_walk(const string path, bool recursive, sc_dir_visitor_fn visito
 
 static void dir_dispose_list(string *list) {
     if (!list) return;
-    for (string *ep = list; *ep != NULL; ep++) tx_free(s_io_use, *ep);
-    tx_free(s_io_use, list);
+    for (string *ep = list; *ep != NULL; ep++) Allocator.dispose(*ep);
+    Allocator.dispose(list);
 }
 
 /* ======================================================================== */
@@ -366,7 +338,6 @@ const sc_file_i File = {
     .exists = file_exists,
     .remove = file_remove,
     .dispose = file_dispose,
-    .alloc_use = file_alloc_use,
 };
 
 const sc_dir_i Directory = {

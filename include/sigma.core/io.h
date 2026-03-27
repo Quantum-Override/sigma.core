@@ -26,16 +26,13 @@
  *
  *   File   — full lifecycle: open, read, write, seek, flush, close, plus path
  *             queries (exists, size, remove).  All returned strings are allocated
- *             via the active alloc_use hook (or Allocator fallback); the caller
+ *             via Allocator (controller scope set by entry point); the caller
  *             must dispose them with File.dispose().
  *
  *   Directory — query-only: exists, is_dir, list, walk.  No mkdir/rmdir/rename.
- *               list() returns a NULL-terminated string[] allocated via the same
- *               alloc_use hook; tear down with Directory.dispose_list().
+ *               list() returns a NULL-terminated string[] allocated via Allocator;
+ *               tear down with Directory.dispose_list().
  *               walk() is zero-allocation: fires a callback per entry.
- *
- *   alloc_use — one setter on File; applies to both File and Directory string
- *               allocations.  Pass NULL to restore the global Allocator fallback.
  */
 #pragma once
 
@@ -75,9 +72,9 @@ typedef struct sc_file_i {
     /**
      * @brief Read up to @p limit bytes from @p f.
      *
-     * Allocates a buffer via alloc_use (or Allocator fallback).  The returned
-     * string is NUL-terminated.  *out_size receives the number of bytes read
-     * (excluding the NUL).  Returns NULL on error or empty read.
+     * Allocates a buffer via Allocator.  The returned string is NUL-terminated.
+     * *out_size receives the number of bytes read (excluding the NUL).
+     * Returns NULL on error or empty read.
      * Caller must dispose the result with File.dispose().
      */
     string (*read)(sc_file_t f, usize limit, usize *out_size);
@@ -85,7 +82,7 @@ typedef struct sc_file_i {
     /**
      * @brief Read one '\n'-terminated line from @p f.
      *
-     * Allocates via alloc_use.  The trailing newline is stripped.
+     * Allocates via Allocator.  The trailing newline is stripped.
      * Returns NULL at EOF or on error.
      * Caller must dispose with File.dispose().
      */
@@ -135,16 +132,6 @@ typedef struct sc_file_i {
      * @brief Dispose a string returned by File.read() or File.read_line().
      */
     void (*dispose)(string s);
-
-    /**
-     * @brief Configure the allocator used by all File and Directory string
-     *        allocations (reads, line buffers, directory entry names).
-     *
-     * Pass a pointer to an sc_alloc_use_t to redirect allocations.
-     * Pass NULL to restore the global Allocator fallback.
-     * NULL fields inside the struct also fall back to Allocator individually.
-     */
-    void (*alloc_use)(sc_alloc_use_t *use);
 } sc_file_i;
 
 /* ── Directory interface ─────────────────────────────────────────────────── */
