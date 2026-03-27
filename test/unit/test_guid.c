@@ -26,6 +26,7 @@
  */
 
 #include <sigma.test/sigtest.h>
+#include <sigma.memory/internal/memory.h>
 #include <string.h>
 #include "guid.h"
 
@@ -88,6 +89,7 @@ static void test_epoch_embedded(void) {
 /* ---------------------------------------------------------------------- */
 
 __attribute__((constructor)) void init_guid_tests(void) {
+    init_memory_system();
     testset("guid_set", set_config, set_teardown);
 
     testcase("generate_not_zero", test_generate_not_zero);

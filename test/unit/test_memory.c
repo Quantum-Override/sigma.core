@@ -26,6 +26,7 @@
  */
 
 #include <sigma.memory/memory.h>
+#include <sigma.memory/internal/memory.h>
 #include <sigma.test/sigtest.h>
 #include <string.h>
 

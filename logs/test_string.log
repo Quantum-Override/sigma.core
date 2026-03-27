@@ -1,11 +1,11 @@
-[2] text_strings_set          :    7 : 2026-03-18  21:59:17                     
+[2] text_strings_set          :    7 : 2026-03-27  04:50:07                     
 ================================================================================
-Running: String length                                           5.735 ms [PASS]
-Running: String copy                                             4.458 ms [PASS]
-Running: String concat                                           3.710 ms [PASS]
-Running: String compare                                          2.523 ms [PASS]
-Running: String format                                           4.112 ms [PASS]
-Running: String dupe                                             3.553 ms [PASS]
-Running: String to array                                         3.564 ms [PASS]
+Running: String length                                          6.816 µs [PASS]
+Running: String copy                                            4.385 µs [PASS]
+Running: String concat                                          4.636 µs [PASS]
+Running: String compare                                         2.474 µs [PASS]
+Running: String format                                          3.937 µs [PASS]
+Running: String dupe                                            3.423 µs [PASS]
+Running: String to array                                        3.505 µs [PASS]
 ================================================================================
 [2]     TESTS=  7        PASS=  7        FAIL=  0        SKIP=  0

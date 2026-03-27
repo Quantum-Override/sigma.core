@@ -26,6 +26,7 @@
  */
 
 #include <sigma.test/sigtest.h>
+#include <sigma.memory/internal/memory.h>
 #include <string.h>
 #include "timing.h"
 
@@ -95,6 +96,7 @@ static void test_timestamp_format(void) {
 /* ---------------------------------------------------------------------- */
 
 __attribute__((constructor)) void init_time_tests(void) {
+    init_memory_system();
     testset("time_set", set_config, set_teardown);
 
     testcase("epoch_nonzero", test_epoch_nonzero);

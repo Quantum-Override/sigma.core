@@ -25,6 +25,7 @@
  * Description: Test suite for Directory interface
  */
 #include <sigma.core/io.h>
+#include <sigma.memory/internal/memory.h>
 #include <sigma.test/sigtest.h>
 #include <stdio.h>
 #include <string.h>
@@ -177,6 +178,7 @@ void test_walk_null_visitor(void) {
 }
 
 __attribute__((constructor)) void init_dir_tests(void) {
+    init_memory_system();
     testset("io_dir_set", set_config, set_teardown);
 
     testcase("Directory.exists false", test_exists_false);

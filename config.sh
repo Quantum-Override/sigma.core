@@ -33,18 +33,15 @@ fi
 CFLAGS="$BASE_CFLAGS"
 TST_CFLAGS="$CFLAGS -DTSTDBG -I./test -I/usr/local/include -I/usr/local/include/sigma.test"
 LDFLAGS=""
-# sigma.test only provides __wrap_malloc / __wrap_free — do not wrap realloc or
-# calloc, which are called internally by sigma.memory and have no __real_* counterpart.
-TST_LDFLAGS="-Wl,--wrap=malloc -Wl,--wrap=free"
+TST_LDFLAGS=""
 
 # REQUIRES: dependencies bundled into packages by cpkg.
 # Empty here — sigma.core packages are thin (no bundled deps).
 REQUIRES=()
 
 # TST_REQUIRES: packages linked into test binaries by rtest/ctest.
-# NOTE: sigma.core uses mock_allocator.c (test/) instead of sigma.memory
-# to avoid ABI conflicts during FR-005 ctrl field migration.
-TST_REQUIRES=("sigma.test")
+# sigma.core tests link with sigma.memory (provides Allocator implementation)
+TST_REQUIRES=("sigma.memory" "sigma.test")
 
 # LOCAL_PACKAGES_DIR: when set, rtest checks this directory for package objects
 # *before* /usr/local/packages/. Use for dev builds where installed packages

@@ -102,9 +102,6 @@ compile_library_objects() {
         SOURCES=("$SRC_DIR"/*.c)
     fi
     
-    # Add mock_allocator.c for testing (provides Allocator facade)
-    SOURCES+=("$TEST_DIR/mock_allocator.c")
-    
     OBJECTS=()
     
     for src in "${SOURCES[@]}"; do

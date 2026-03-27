@@ -26,6 +26,7 @@
  */
 #include <sigma.core/strings.h>
 #include <sigma.test/sigtest.h>
+#include <sigma.memory/internal/memory.h>
 #include <string.h>
 
 void set_config_sb(FILE **log_stream) { *log_stream = fopen("logs/test_stringbuilder.log", "w"); }
@@ -176,6 +177,7 @@ void test_stringbuilder_set_capacity(void) {
 
 // Register tests
 __attribute__((constructor)) void init_stringbuilder_tests(void) {
+    init_memory_system();
     testset("text_stringbuilder_set", set_config_sb, set_teardown_sb);
 
     testcase("StringBuilder new", test_stringbuilder_new);

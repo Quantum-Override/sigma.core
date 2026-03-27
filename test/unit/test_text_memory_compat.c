@@ -36,6 +36,7 @@
  * Run with: ctest text_memory_compat
  */
 #include <sigma.core/strings.h>
+#include <sigma.memory/internal/memory.h>
 #include <sigma.test/sigtest.h>
 #include <string.h>
 
@@ -122,8 +123,7 @@ void test_multiple_allocs(void) {
 }
 
 // Register tests
-__attribute__((constructor)) void init_memory_compat_tests(void) {
-    testset("text_memory_compat", set_config_compat, set_teardown_compat);
+__attribute__((constructor)) void init_memory_compat_tests(void) {    init_memory_system();    testset("text_memory_compat", set_config_compat, set_teardown_compat);
 
     testcase("Basic string operations", test_string_basic_ops);
     testcase("StringBuilder operations", test_stringbuilder_ops);

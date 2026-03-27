@@ -75,14 +75,6 @@ typedef struct sc_string_i {
     int (*compare)(string, string);   /**< Compares two strings for equality. */
     char *(*to_array)(string);        /**< Returns a char array copy of the string. */
     void (*dispose)(string);          /**< Disposes the string allocation. */
-    /**
-     * @brief Configure the allocator used by String operations.
-     *
-     * Pass a pointer to an sc_alloc_use_t to redirect all String allocations
-     * through those hooks.  Pass NULL to restore the global Allocator fallback.
-     * NULL fields inside the struct also fall back to Allocator individually.
-     */
-    void (*alloc_use)(sc_alloc_use_t *use);
 } sc_string_i;
 
 /* IStringBuilder interface */
@@ -109,15 +101,6 @@ typedef struct sc_stringbuilder_i {
     void (*setCapacity)(string_builder,
                         usize);      /**< Adjusts the buffer capacity, preserving current content */
     void (*dispose)(string_builder); /**< Disposes the string builder and its buffer */
-    /**
-     * @brief Configure the allocator used by StringBuilder operations.
-     *
-     * Pass a pointer to an sc_alloc_use_t to redirect all StringBuilder
-     * allocations through those hooks.  Pass NULL to restore the global
-     * Allocator fallback.  NULL fields inside the struct also fall back
-     * to Allocator individually.
-     */
-    void (*alloc_use)(sc_alloc_use_t *use);
 } sc_stringbuilder_i;
 
 /* Global instances */
