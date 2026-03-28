@@ -1,0 +1,36 @@
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Build directories
+/build/
+/bin/
+
+# Package outputs
+/package/
+
+# Test logs
+/logs/
+*.log
+
+# Editor/IDE files
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# Core dumps
+core
+core.*
+vgcore.*
