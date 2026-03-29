@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.2.0] — 2026-03-28
+
+### Added
+- module.h: sc_app_bootstrap_fn typedef — callback signature for application early setup hook
+- module.h: sc_module_i interface — Module Vtable with register_module, init_all, shutdown_all, set_bootstrap
+- module.h: const sc_module_i Module — global Vtable instance for consistent interface access
+- module.c: 3-phase module initialization — SYSTEM → bootstrap hook → remaining modules
+- module.c: Module.set_bootstrap() implementation — register app early setup (runs after SYSTEM, before USER/TRUSTED)
+- docs/Application.md: Bootstrap pattern documentation with sigma.memory integration example
+- test/unit/test_module.c: Bootstrap timing tests (4 tests) — verify hook runs after SYSTEM, before USER modules
+
+### Changed
+- module.c: sigma_module_init_all() — split single dispatch loop into 3 phases for bootstrap hook timing
+- module.h: Legacy functions (sigma_module_register, sigma_module_init_all, sigma_module_shutdown_all) marked as backward compatibility — prefer Module interface
+
+### Removed
+- module.c: dispatch_init_all() static function — logic inlined into sigma_module_init_all() 3-phase dispatch
+
+---
+
 ## [1.1.0] — 2026-03-27
 
 ### Added
