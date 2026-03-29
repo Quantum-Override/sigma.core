@@ -71,18 +71,49 @@ If `Application.set_allocator()` is never called:
 
 ## Integration with sigma.memory
 
-When using `sigma.memory` as your allocator provider:
+When using `sigma.memory` as your allocator provider, use the **bootstrap pattern** to ensure sigma.memory initializes before other modules allocate:
 
 ```c
+// sigma.test/main.c (or any executable using sigma.memory)
 #include <sigma.core/application.h>
+#include <sigma.core/module.h>
 #include <sigma.memory/memory.h>
 
-void module_init(void) {
-    // sigma.memory provides a ready-to-use allocator hook
+static void bootstrap_allocator(void) {
+    // sigma.memory is now initialized (SYSTEM module)
+    // Configure app-wide allocator before ecosystem modules init
     Application.set_allocator(Memory.get_allocator());
-    
-    // All sigma.core operations now use sigma.memory's allocator
 }
+
+int main(int argc, char **argv) {
+    // Register bootstrap hook (runs after SYSTEM, before USER modules)
+    Module.set_bootstrap(bootstrap_allocator);
+    
+    // Initialize all modules:
+    // 1. SYSTEM modules (sigma.memory) 
+    // 2. Bootstrap hook (Application.set_allocator)
+    // 3. Other modules (anvil, sigma.string, etc.) using configured allocator
+    Module.init_all();
+    
+    // Run application
+    run_application();
+    
+    // Cleanup
+    Module.shutdown_all();
+    return 0;
+}
+```
+
+**Why Bootstrap Instead of module_init()?**
+
+Applications typically depend on ecosystem modules (anvil, sigma.string, etc.). Without bootstrap:
+- sigma.memory.init() → anvil.init() → **app.init()**
+- anvil allocates using **default allocator** before app can configure sigma.memory
+
+With bootstrap pattern:
+- sigma.memory.init() → **bootstrap_allocator()** → anvil.init() → app.init()  
+- anvil allocates using **configured allocator** ✓
+
 ```
 
 ## Design Rationale

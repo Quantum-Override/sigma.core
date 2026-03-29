@@ -22,7 +22,6 @@
 static void default_panic(const char *module_name, const char *reason);
 static int registry_index(const char *name);
 static int compute_topo_order(void);
-static int dispatch_init_all(void);
 
 /* ── Static state ────────────────────────────────────────────────────────── */
 #define SC_MAX_MODULES 32
@@ -38,6 +37,7 @@ static sc_module_panic_fn panic_fn = default_panic;
 static sc_trusted_grant_fn trusted_grant = NULL;
 static sc_trusted_app_grant_fn trusted_app_grant = NULL;
 static sc_arena_provider_fn arena_provider = NULL;
+static sc_app_bootstrap_fn bootstrap_fn = NULL;
 
 /* stdlib hooks — thin wrappers avoid --wrap=malloc data-relocation issues */
 static void *system_alloc_wrap(usize sz) { return malloc(sz); }
@@ -63,7 +63,67 @@ int sigma_module_register(const sigma_module_t *mod) {
 int sigma_module_init_all(void) {
     if (initialized) return 0;
     if (compute_topo_order() != 0) return -1;
-    if (dispatch_init_all() != 0) return -1;
+
+    // Phase 1: Initialize SYSTEM modules (sigma.memory, sigma.core)
+    for (int i = 0; i < (int)init_count; i++) {
+        const sigma_module_t *mod = init_order[i];
+        if (mod->role != SIGMA_ROLE_SYSTEM) continue;
+
+        void *ctx = NULL; // SYSTEM modules always get NULL context
+        if (mod->init) {
+            int result = mod->init(ctx);
+            if (result != 0) {
+                fprintf(stderr, "sigma.module: '%s' init() returned %d\n", mod->name, result);
+                return -1;
+            }
+        }
+    }
+
+    // Phase 2: Application bootstrap (after SYSTEM, before others)
+    if (bootstrap_fn) {
+        bootstrap_fn();
+    }
+
+    // Phase 3: Initialize remaining modules (in topological order)
+    for (int i = 0; i < (int)init_count; i++) {
+        const sigma_module_t *mod = init_order[i];
+        if (mod->role == SIGMA_ROLE_SYSTEM) continue; // Already initialized
+
+        void *ctx = NULL;
+        if (mod->role == SIGMA_ROLE_TRUSTED) {
+            ctx =
+                trusted_grant ? trusted_grant(mod->name, mod->arena_size, mod->arena_policy) : NULL;
+        } else if (mod->role == SIGMA_ROLE_TRUSTED_APP) {
+            ctx = trusted_app_grant
+                      ? trusted_app_grant(mod->name, mod->arena_size, mod->arena_policy)
+                      : NULL;
+        } else {
+            switch (mod->alloc) {
+                case SIGMA_ALLOC_SYSTEM:
+                    ctx = &system_alloc_use;
+                    break;
+                case SIGMA_ALLOC_ARENA:
+                    ctx = arena_provider ? arena_provider(mod->name) : NULL;
+                    break;
+                case SIGMA_ALLOC_CUSTOM:
+                    ctx = mod->alloc_hooks;
+                    break;
+                case SIGMA_ALLOC_DEFAULT:
+                default:
+                    ctx = NULL;
+                    break;
+            }
+        }
+
+        if (mod->init) {
+            int result = mod->init(ctx);
+            if (result != 0) {
+                fprintf(stderr, "sigma.module: '%s' init() returned %d\n", mod->name, result);
+                return -1;
+            }
+        }
+    }
+
     initialized = true;
     return 0;
 }
@@ -89,6 +149,8 @@ void sigma_module_set_trusted_app_grant(sc_trusted_app_grant_fn fn) { trusted_ap
 
 void sigma_module_set_arena_provider(sc_arena_provider_fn fn) { arena_provider = fn; }
 
+static void sigma_module_set_bootstrap(sc_app_bootstrap_fn fn) { bootstrap_fn = fn; }
+
 #ifdef TSTDBG
 void sigma_module_reset(void) {
     registry_count = 0;
@@ -98,6 +160,7 @@ void sigma_module_reset(void) {
     trusted_grant = NULL;
     trusted_app_grant = NULL;
     arena_provider = NULL;
+    bootstrap_fn = NULL;
     for (int i = 0; i < SC_MAX_MODULES; i++) {
         registry[i] = NULL;
         init_order[i] = NULL;
@@ -196,57 +259,13 @@ static int compute_topo_order(void) {
     return 0;
 }
 
-/*
- * dispatch_init_all — walk init_order, dispatch alloc-appropriate ctx.
- *
- * TRUSTED modules always receive sc_trusted_cap_t* from trusted_grant;
- * the alloc field is ignored for TRUSTED.
- *
- * All other roles: ctx is derived from the alloc field:
- *   DEFAULT — NULL (global Allocator / SLB0)
- *   SYSTEM  — &system_alloc_use (stdlib hooks; no sigma.memory dep)
- *   ARENA   — sc_alloc_use_t* from arena_provider (sigma.memory hook);
- *             NULL if not registered — module falls back to malloc
- *   CUSTOM  — mod->alloc_hooks (caller-supplied fn pointers)
- */
-static int dispatch_init_all(void) {
-    for (int i = 0; i < (int)init_count; i++) {
-        const sigma_module_t *mod = init_order[i];
-        void *ctx = NULL;
+/* =========================================================================
+ * Module Interface
+ * ========================================================================= */
 
-        if (mod->role == SIGMA_ROLE_TRUSTED) {
-            ctx =
-                trusted_grant ? trusted_grant(mod->name, mod->arena_size, mod->arena_policy) : NULL;
-        } else if (mod->role == SIGMA_ROLE_TRUSTED_APP) {
-            ctx = trusted_app_grant
-                      ? trusted_app_grant(mod->name, mod->arena_size, mod->arena_policy)
-                      : NULL;
-        } else {
-            switch (mod->alloc) {
-                case SIGMA_ALLOC_SYSTEM:
-                    ctx = &system_alloc_use;
-                    break;
-                case SIGMA_ALLOC_ARENA:
-                    ctx = arena_provider ? arena_provider(mod->name) : NULL;
-                    break;
-                case SIGMA_ALLOC_CUSTOM:
-                    ctx = mod->alloc_hooks;
-                    break;
-                case SIGMA_ALLOC_DEFAULT:
-                default:
-                    ctx = NULL;
-                    break;
-            }
-        }
-
-        if (!mod->init) continue;
-
-        int result = mod->init(ctx);
-        if (result != 0) {
-            fprintf(stderr, "sigma.module: '%s' init() returned %d\n", mod->name, result);
-            return -1;
-        }
-    }
-
-    return 0;
-}
+const sc_module_i Module = {
+    .register_module = sigma_module_register,
+    .init_all = sigma_module_init_all,
+    .shutdown_all = sigma_module_shutdown_all,
+    .set_bootstrap = sigma_module_set_bootstrap,
+};

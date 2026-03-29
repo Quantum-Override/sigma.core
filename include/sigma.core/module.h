@@ -168,7 +168,89 @@ typedef sc_trusted_cap_t *(*sc_trusted_app_grant_fn)(const char *module_name, us
  *         to SIGMA_ALLOC_ARENA modules.  Returns NULL if allocation fails. */
 typedef sc_alloc_use_t *(*sc_arena_provider_fn)(const char *module_name);
 
-// ── Registry API ───────────────────────────────────────────────────────────
+/** @brief Application bootstrap hook type.
+ *
+ *  Called after SYSTEM modules initialize but before other modules initialize.
+ *  Used by executable applications to configure global resources (e.g., allocators)
+ *  after sigma.memory is ready but before ecosystem modules allocate.
+ *
+ *  Example: sigma.test registers a bootstrap hook that calls
+ *           Application.set_allocator(Memory.get_allocator())
+ */
+typedef void (*sc_app_bootstrap_fn)(void);
+
+// ── Module Interface ───────────────────────────────────────────────────────
+
+/**
+ * @brief Module system interface - all module lifecycle operations
+ *
+ * Provides unified access to module registration, initialization, and shutdown.
+ * Applications use Module.set_bootstrap() to configure global resources after
+ * SYSTEM modules (sigma.memory) initialize but before other modules run.
+ */
+typedef struct sc_module_i {
+    /**
+     * @brief Register a module descriptor
+     * @param mod Module descriptor (must remain valid for process lifetime)
+     * @return 0 on success; -1 if registry is full
+     */
+    int (*register_module)(const sigma_module_t *mod);
+
+    /**
+     * @brief Initialize all registered modules
+     *
+     * Performs 3-phase initialization:
+     * 1. SYSTEM modules (sigma.memory, sigma.core)
+     * 2. Application bootstrap hook (if registered)
+     * 3. Remaining modules in topological order
+     *
+     * @return 0 if all inits succeed; first non-zero init return value otherwise
+     */
+    int (*init_all)(void);
+
+    /**
+     * @brief Shutdown all initialized modules in reverse order
+     */
+    void (*shutdown_all)(void);
+
+    /**
+     * @brief Register application bootstrap hook
+     *
+     * Hook runs after SYSTEM modules initialize but before other modules.
+     * Allows applications to configure global resources (allocators, logging, etc.)
+     * after sigma.memory is ready but before ecosystem modules allocate.
+     *
+     * @param fn Bootstrap function to call; NULL to clear
+     *
+     * Example usage (sigma.test/main.c):
+     * @code
+     * static void bootstrap_allocator(void) {
+     *     Application.set_allocator(Memory.get_allocator());
+     * }
+     *
+     * int main(void) {
+     *     Module.set_bootstrap(bootstrap_allocator);
+     *     Module.init_all();
+     *     // ...
+     * }
+     * @endcode
+     */
+    void (*set_bootstrap)(sc_app_bootstrap_fn fn);
+} sc_module_i;
+
+/**
+ * @brief Global Module interface instance
+ */
+extern const sc_module_i Module;
+
+// ── Registry API (legacy direct functions) ────────────────────────────────
+//
+// These functions are provided for backward compatibility.
+// New code should use the Module interface instead:
+//   sigma_module_register(mod)  →  Module.register_module(mod)
+//   sigma_module_init_all()     →  Module.init_all()
+//   sigma_module_shutdown_all() →  Module.shutdown_all()
+//
 
 /**
  * @brief Register a module descriptor.

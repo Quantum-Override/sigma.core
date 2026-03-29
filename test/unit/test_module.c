@@ -604,6 +604,134 @@ static void test_cycle_panic(void) {
     sigma_module_shutdown_all();
 }
 
+/* ── Bootstrap tests ────────────────────────────────────────────────────── */
+/* Bootstrap hook should run AFTER SYSTEM, BEFORE other modules */
+
+static int bootstrap_call_count = 0;
+static int bootstrap_stub_a_count_at_call = 0;
+static int bootstrap_stub_b_count_at_call = 0;
+
+static void bootstrap_hook(void) {
+    bootstrap_call_count++;
+    /* Capture counts when bootstrap fires */
+    bootstrap_stub_a_count_at_call = stub_a_init_count;
+    bootstrap_stub_b_count_at_call = stub_b_init_count;
+}
+
+static void reset_bootstrap_state(void) {
+    bootstrap_call_count = 0;
+    bootstrap_stub_a_count_at_call = 0;
+    bootstrap_stub_b_count_at_call = 0;
+}
+
+/* 13 ─ Bootstrap runs after SYSTEM, before USER */
+static void test_bootstrap_timing(void) {
+    sigma_module_reset();
+    reset_stub_state();
+    reset_bootstrap_state();
+
+    /* mod_system is SIGMA_ROLE_SYSTEM using stub_a */
+    /* mod_b_nodep is SIGMA_ROLE_USER using stub_b */
+    sigma_module_register(&mod_system);
+    sigma_module_register(&mod_b_nodep);
+
+    Module.set_bootstrap(bootstrap_hook);
+    Module.init_all();
+
+    /* Bootstrap should have been called exactly once */
+    MOCK_ASSERT(bootstrap_call_count == 1, "bootstrap hook should run exactly once");
+
+    /* At the time bootstrap ran: */
+    /* - SYSTEM module (stub_a) should have initialized */
+    MOCK_ASSERT(bootstrap_stub_a_count_at_call == 1,
+                "SYSTEM module should initialize BEFORE bootstrap");
+
+    /* - USER module (stub_b) should NOT have initialized yet */
+    MOCK_ASSERT(bootstrap_stub_b_count_at_call == 0,
+                "USER module should NOT initialize before bootstrap");
+
+    /* After init_all completes, both should be initialized */
+    MOCK_ASSERT(stub_a_init_count == 1, "SYSTEM module should be initialized");
+    MOCK_ASSERT(stub_b_init_count == 1, "USER module should be initialized after bootstrap");
+
+    sigma_module_shutdown_all();
+}
+
+/* 14 ─ Multiple set_bootstrap calls (last wins) */
+static int first_bootstrap_called = 0;
+static int second_bootstrap_called = 0;
+
+static void first_bootstrap(void) { first_bootstrap_called = 1; }
+static void second_bootstrap(void) { second_bootstrap_called = 1; }
+
+static void test_bootstrap_multiple_set(void) {
+    sigma_module_reset();
+    reset_stub_state();
+    first_bootstrap_called = 0;
+    second_bootstrap_called = 0;
+
+    sigma_module_register(&mod_system);
+    sigma_module_register(&mod_b_nodep);
+
+    /* Set first hook, then overwrite with second */
+    Module.set_bootstrap(first_bootstrap);
+    Module.set_bootstrap(second_bootstrap);
+
+    Module.init_all();
+
+    /* Only second should have been called (last wins) */
+    MOCK_ASSERT(first_bootstrap_called == 0, "first bootstrap should NOT run (overwritten)");
+    MOCK_ASSERT(second_bootstrap_called == 1, "second bootstrap should run (last set)");
+
+    sigma_module_shutdown_all();
+}
+
+/* 15 ─ NULL bootstrap allowed */
+static void test_bootstrap_null(void) {
+    sigma_module_reset();
+    reset_stub_state();
+    reset_bootstrap_state();
+
+    sigma_module_register(&mod_system);
+    sigma_module_register(&mod_b_nodep);
+
+    /* Set bootstrap to NULL (clear) */
+    Module.set_bootstrap(NULL);
+
+    int r = Module.init_all();
+
+    /* Init should succeed without bootstrap */
+    MOCK_ASSERT(r == 0, "init_all should succeed with NULL bootstrap");
+    MOCK_ASSERT(bootstrap_call_count == 0, "NULL bootstrap should not be called");
+    MOCK_ASSERT(stub_a_init_count == 1, "SYSTEM module should still initialize");
+    MOCK_ASSERT(stub_b_init_count == 1, "USER module should still initialize");
+
+    sigma_module_shutdown_all();
+}
+
+/* 16 ─ Reset clears bootstrap */
+static void test_bootstrap_reset_clears(void) {
+    sigma_module_reset();
+    reset_stub_state();
+    reset_bootstrap_state();
+
+    /* Set bootstrap, then reset */
+    Module.set_bootstrap(bootstrap_hook);
+    sigma_module_reset();
+
+    sigma_module_register(&mod_system);
+    sigma_module_register(&mod_b_nodep);
+
+    Module.init_all();
+
+    /* Bootstrap should NOT run (cleared by reset) */
+    MOCK_ASSERT(bootstrap_call_count == 0, "reset should clear bootstrap hook");
+    MOCK_ASSERT(stub_a_init_count == 1, "SYSTEM module should still initialize");
+    MOCK_ASSERT(stub_b_init_count == 1, "USER module should still initialize");
+
+    sigma_module_shutdown_all();
+}
+
 /* =========================================================================
  * main
  * ========================================================================= */
@@ -625,6 +753,10 @@ int main(void) {
     mock_run("max_modules", test_max_modules);
     mock_run("missing_dep_panic", test_missing_dep_panic);
     mock_run("cycle_panic", test_cycle_panic);
+    mock_run("bootstrap_timing", test_bootstrap_timing);
+    mock_run("bootstrap_multiple_set", test_bootstrap_multiple_set);
+    mock_run("bootstrap_null", test_bootstrap_null);
+    mock_run("bootstrap_reset_clears", test_bootstrap_reset_clears);
 
     return mock_summary("test_module");
 }
