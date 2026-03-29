@@ -25,9 +25,9 @@
  * Description: Test suite for Sigma.Core Time interface
  */
 
+#include <sigma.core/timing.h>
 #include <sigma.test/sigtest.h>
 #include <string.h>
-#include "timing.h"
 
 static void set_config(FILE **log_stream) { *log_stream = fopen("logs/test_time.log", "w"); }
 
@@ -94,7 +94,7 @@ static void test_timestamp_format(void) {
 /* Registration                                                            */
 /* ---------------------------------------------------------------------- */
 
-__attribute__((constructor)) void init_time_tests(void) {
+static void register_time_tests(void) {
     testset("time_set", set_config, set_teardown);
 
     testcase("epoch_nonzero", test_epoch_nonzero);
@@ -103,4 +103,8 @@ __attribute__((constructor)) void init_time_tests(void) {
     testcase("timestamp_not_null", test_timestamp_not_null);
     testcase("timestamp_length", test_timestamp_length);
     testcase("timestamp_format", test_timestamp_format);
+}
+
+__attribute__((constructor)) static void enqueue_time_tests(void) {
+    Tests.enqueue(register_time_tests);
 }

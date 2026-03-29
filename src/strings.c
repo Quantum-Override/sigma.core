@@ -41,31 +41,6 @@
 #include <string.h>
 
 /* ======================================================================== */
-/* Allocator dispatch state                                                 */
-/* ======================================================================== */
-
-/* Per-interface override hooks.  NULL = use global Allocator. */
-static sc_alloc_use_t *s_string_use = NULL;
-static sc_alloc_use_t *s_sb_use = NULL;
-
-/* Dispatch helpers — fall back to Allocator when hook or field is NULL. */
-static void *tx_alloc(sc_alloc_use_t *use, usize size) {
-    if (use && use->alloc) return use->alloc(size);
-    return Allocator.alloc(size);
-}
-static void tx_free(sc_alloc_use_t *use, void *ptr) {
-    if (use && use->release) {
-        use->release(ptr);
-        return;
-    }
-    Allocator.free(ptr);
-}
-static void *tx_realloc(sc_alloc_use_t *use, void *ptr, usize size) {
-    if (use && use->resize) return use->resize(ptr, size);
-    return Allocator.realloc(ptr, size);
-}
-
-/* ======================================================================== */
 /* Opaque Struct Definitions                                                */
 /* ======================================================================== */
 
@@ -120,10 +95,6 @@ static int buffer_ensure_capacity(string_buffer_s *buf, usize needed);
 static char *buffer_data(string_buffer_s *buf);
 static void buffer_dispose(string_buffer_s *buf);
 
-// Allocator-use setters
-static void string_set_alloc_use(sc_alloc_use_t *use);
-static void stringbuilder_set_alloc_use(sc_alloc_use_t *use);
-
 /* ======================================================================== */
 /* String API Functions                                                     */
 /* ======================================================================== */
@@ -163,7 +134,7 @@ string string_concat(const string str1, const string str2) {
 
     len1 = strlen(str1);
     len2 = strlen(str2);
-    result = tx_alloc(s_string_use, len1 + len2 + 1);
+    result = Allocator.alloc(len1 + len2 + 1);
     if (!result) goto exit;
 
     strcpy(result, str1);
@@ -217,7 +188,7 @@ string string_format(const string format, ...) {
 
     if (len < 0) goto exit;
 
-    result = tx_alloc(s_string_use, len + 1);
+    result = Allocator.alloc(len + 1);
     if (!result) goto exit;
 
     va_start(args, format);
@@ -233,7 +204,7 @@ exit:
  * @param str String to dispose
  */
 void string_dispose(string str) {
-    if (str) tx_free(s_string_use, str);
+    if (str) Allocator.dispose(str);
 }
 
 /**
@@ -252,7 +223,6 @@ const sc_string_i String = {
     .format = string_format,
     .to_array = string_to_array,
     .dispose = string_dispose,
-    .alloc_use = string_set_alloc_use,
 };
 
 /* ======================================================================== */
@@ -269,7 +239,7 @@ string_builder stringbuilder_new(usize capacity) {
 
     if (capacity == 0) capacity = 16;
 
-    sb = tx_alloc(s_sb_use, sizeof(struct string_builder_s));
+    sb = Allocator.alloc(sizeof(struct string_builder_s));
     if (!sb) goto exit;
 
     sb->buffer = buffer_new(capacity + 1);  // +1 for null terminator
@@ -282,7 +252,7 @@ string_builder stringbuilder_new(usize capacity) {
     goto exit;
 
 cleanup:
-    tx_free(s_sb_use, sb);
+    Allocator.dispose(sb);
     sb = NULL;
 
 exit:
@@ -467,7 +437,7 @@ string stringbuilder_to_string(string_builder sb) {
     if (!sb || !sb->str) goto exit;
 
     len = stringbuilder_length(sb);
-    result = tx_alloc(s_sb_use, len + 1);
+    result = Allocator.alloc(len + 1);
     if (!result) goto exit;
 
     strcpy(result, sb->str);
@@ -522,7 +492,7 @@ void stringbuilder_set_capacity(string_builder sb, usize new_capacity) {
 void stringbuilder_dispose(string_builder sb) {
     if (!sb) return;
     if (sb->buffer) buffer_dispose(sb->buffer);
-    tx_free(s_sb_use, sb);
+    Allocator.dispose(sb);
 }
 
 const sc_stringbuilder_i StringBuilder = {
@@ -540,7 +510,6 @@ const sc_stringbuilder_i StringBuilder = {
     .capacity = stringbuilder_capacity,
     .setCapacity = stringbuilder_set_capacity,
     .dispose = stringbuilder_dispose,
-    .alloc_use = stringbuilder_set_alloc_use,
 };
 
 /* ======================================================================== */
@@ -562,7 +531,7 @@ static string string_alloc_copy(const char *src, usize len) {
 
     if (!src || len == 0) goto exit;
 
-    result = tx_alloc(s_string_use, len + 1);
+    result = Allocator.alloc(len + 1);
     if (!result) goto exit;
 
     memcpy(result, src, len);
@@ -582,10 +551,10 @@ static string_buffer_s *buffer_new(usize capacity) {
 
     if (capacity == 0) capacity = 16;
 
-    buf = tx_alloc(s_sb_use, sizeof(string_buffer_s));
+    buf = Allocator.alloc(sizeof(string_buffer_s));
     if (!buf) goto exit;
 
-    buf->data = tx_alloc(s_sb_use, capacity);
+    buf->data = Allocator.alloc(capacity);
     if (!buf->data) goto cleanup;
 
     buf->capacity = capacity;
@@ -594,7 +563,7 @@ static string_buffer_s *buffer_new(usize capacity) {
     goto exit;
 
 cleanup:
-    tx_free(s_sb_use, buf);
+    Allocator.dispose(buf);
     buf = NULL;
 
 exit:
@@ -618,7 +587,7 @@ static int buffer_ensure_capacity(string_buffer_s *buf, usize needed) {
     }
 
     new_capacity = needed;
-    new_data = tx_realloc(s_sb_use, buf->data, new_capacity);
+    new_data = Allocator.realloc(buf->data, new_capacity);
     if (!new_data) goto exit;
 
     buf->data = new_data;
@@ -642,14 +611,6 @@ static char *buffer_data(string_buffer_s *buf) { return buf ? buf->data : NULL; 
  */
 static void buffer_dispose(string_buffer_s *buf) {
     if (!buf) return;
-    if (buf->data) tx_free(s_sb_use, buf->data);
-    tx_free(s_sb_use, buf);
+    if (buf->data) Allocator.dispose(buf->data);
+    Allocator.dispose(buf);
 }
-
-/* ======================================================================== */
-/* Allocator-use setters                                                    */
-/* ======================================================================== */
-
-static void string_set_alloc_use(sc_alloc_use_t *use) { s_string_use = use; }
-
-static void stringbuilder_set_alloc_use(sc_alloc_use_t *use) { s_sb_use = use; }

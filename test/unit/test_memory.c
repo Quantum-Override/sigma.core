@@ -61,8 +61,12 @@ void test_realloc(void) {
     Allocator.dispose(newbuf);
 }
 
-__attribute__((constructor)) void init_memory_tests(void) {
+static void register_memory_tests(void) {
     testcase("Memory alloc zero", test_alloc_zero);
     testcase("Memory alloc nonzero", test_alloc_nonzero);
     testcase("Memory realloc", test_realloc);
+}
+
+__attribute__((constructor)) static void enqueue_memory_tests(void) {
+    Tests.enqueue(register_memory_tests);
 }

@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.1.0] — 2026-03-27
+
+### Added
+- application.h: New Application interface for app-level configuration (FR-2603-sigma-core-004)
+- application.h: Application.set_allocator() - configure application-wide allocator
+- application.h: Application.get_allocator() - retrieve current allocator (defaults to SLB0)
+- allocator.h: sc_alloc_use_t.ctrl field as first member (offset 0 guarantee) for controller access (FR-2603-sigma-core-005)
+- docs/Application.md: Documentation for Application interface usage and integration
+
+### Changed
+- allocator.h: Allocator.free() renamed to Allocator.dispose() for semantic clarity (FR-2603-sigma-core-006)
+- All internal code updated: free() → dispose() (strings.c, io.c, collections.c, etc.)
+- Test suite: Converted 9 test files to Tests.enqueue() pattern from sigma.test v0.1.0+
+- Test suite: Framework now manages initialization order instead of manual init_memory_system() calls
+
+### Fixed
+- test_alloc_use_ctrl.c: Corrected test_cast_use_to_ctrl assertion (was comparing pointer address to field value)
+
+### Removed
+- test_text_memory_compat.c: Redundant test (all tests now link sigma.memory by default)
+
+---
+
 ## [1.0.0] — 2026-03-22
 
 ### Added

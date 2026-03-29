@@ -87,7 +87,7 @@ static void test_epoch_embedded(void) {
 /* Registration                                                            */
 /* ---------------------------------------------------------------------- */
 
-__attribute__((constructor)) void init_guid_tests(void) {
+static void register_guid_tests(void) {
     testset("guid_set", set_config, set_teardown);
 
     testcase("generate_not_zero", test_generate_not_zero);
@@ -96,4 +96,8 @@ __attribute__((constructor)) void init_guid_tests(void) {
     testcase("to_string_length", test_to_string_length);
     testcase("to_string_format", test_to_string_format);
     testcase("epoch_embedded", test_epoch_embedded);
+}
+
+__attribute__((constructor)) static void enqueue_guid_tests(void) {
+    Tests.enqueue(register_guid_tests);
 }

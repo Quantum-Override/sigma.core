@@ -39,17 +39,17 @@ static int tests_passed = 0;
 void test_string_dupe(void) {
     TEST_START("string_dupe");
 
-    string s1 = string_dupe("hello");
+    string s1 = String.dupe("hello");
     assert(s1 != NULL);
     assert(strcmp(s1, "hello") == 0);
-    string_dispose(s1);
+    String.dispose(s1);
 
     // NULL input
-    string s2 = string_dupe(NULL);
+    string s2 = String.dupe(NULL);
     assert(s2 == NULL);
 
     // Empty string
-    string s3 = string_dupe("");
+    string s3 = String.dupe("");
     assert(s3 == NULL);  // FR spec: len == 0 returns NULL
 
     TEST_PASS();
@@ -58,19 +58,19 @@ void test_string_dupe(void) {
 void test_string_copy(void) {
     TEST_START("string_copy");
 
-    string orig = string_dupe("world");
+    string orig = String.dupe("world");
     assert(orig != NULL);
 
-    string copy = string_copy(orig);
+    string copy = String.copy(orig);
     assert(copy != NULL);
     assert(strcmp(orig, copy) == 0);
     assert(orig != copy);  // different pointers
 
-    string_dispose(orig);
-    string_dispose(copy);
+    String.dispose(orig);
+    String.dispose(copy);
 
     // NULL input
-    string s2 = string_copy(NULL);
+    string s2 = String.copy(NULL);
     assert(s2 == NULL);
 
     TEST_PASS();
@@ -79,12 +79,12 @@ void test_string_copy(void) {
 void test_string_length(void) {
     TEST_START("string_length");
 
-    string s = string_dupe("test");
-    assert(string_length(s) == 4);
-    string_dispose(s);
+    string s = String.dupe("test");
+    assert(String.length(s) == 4);
+    String.dispose(s);
 
     // NULL input
-    assert(string_length(NULL) == 0);
+    assert(String.length(NULL) == 0);
 
     TEST_PASS();
 }
@@ -92,26 +92,26 @@ void test_string_length(void) {
 void test_string_concat(void) {
     TEST_START("string_concat");
 
-    string s1 = string_dupe("hello");
-    string s2 = string_dupe(" world");
+    string s1 = String.dupe("hello");
+    string s2 = String.dupe(" world");
 
-    string result = string_concat(s1, s2);
+    string result = String.concat(s1, s2);
     assert(result != NULL);
     assert(strcmp(result, "hello world") == 0);
-    assert(string_length(result) == 11);
+    assert(String.length(result) == 11);
 
-    string_dispose(s1);
-    string_dispose(s2);
-    string_dispose(result);
+    String.dispose(s1);
+    String.dispose(s2);
+    String.dispose(result);
 
     // NULL inputs
-    string s4 = string_dupe("x");
-    assert(string_concat(NULL, s4) == NULL);
-    string_dispose(s4);
+    string s4 = String.dupe("x");
+    assert(String.concat(NULL, s4) == NULL);
+    String.dispose(s4);
 
-    string s3 = string_dupe("y");
-    assert(string_concat(s3, NULL) == NULL);
-    string_dispose(s3);
+    string s3 = String.dupe("y");
+    assert(String.concat(s3, NULL) == NULL);
+    String.dispose(s3);
 
     TEST_PASS();
 }
@@ -119,25 +119,25 @@ void test_string_concat(void) {
 void test_string_compare(void) {
     TEST_START("string_compare");
 
-    string s1 = string_dupe("abc");
-    string s2 = string_dupe("abc");
-    string s3 = string_dupe("def");
+    string s1 = String.dupe("abc");
+    string s2 = String.dupe("abc");
+    string s3 = String.dupe("def");
 
-    assert(string_compare(s1, s2) == 0);  // equal
-    assert(string_compare(s1, s3) < 0);   // s1 < s3
-    assert(string_compare(s3, s1) > 0);   // s3 > s1
-    assert(string_compare(s1, s1) == 0);  // same pointer
+    assert(String.compare(s1, s2) == 0);  // equal
+    assert(String.compare(s1, s3) < 0);   // s1 < s3
+    assert(String.compare(s3, s1) > 0);   // s3 > s1
+    assert(String.compare(s1, s1) == 0);  // same pointer
 
-    string_dispose(s1);
-    string_dispose(s2);
-    string_dispose(s3);
+    String.dispose(s1);
+    String.dispose(s2);
+    String.dispose(s3);
 
     // NULL inputs
-    assert(string_compare(NULL, NULL) == 0);
-    string s4 = string_dupe("x");
-    assert(string_compare(s4, NULL) > 0);
-    assert(string_compare(NULL, s4) < 0);
-    string_dispose(s4);
+    assert(String.compare(NULL, NULL) == 0);
+    string s4 = String.dupe("x");
+    assert(String.compare(s4, NULL) > 0);
+    assert(String.compare(NULL, s4) < 0);
+    String.dispose(s4);
 
     TEST_PASS();
 }
@@ -145,18 +145,18 @@ void test_string_compare(void) {
 void test_string_format(void) {
     TEST_START("string_format");
 
-    string s1 = string_format("Number: %d", 42);
+    string s1 = String.format("Number: %d", 42);
     assert(s1 != NULL);
     assert(strcmp(s1, "Number: 42") == 0);
-    string_dispose(s1);
+    String.dispose(s1);
 
-    string s2 = string_format("Hello %s, you are #%d", "world", 1);
+    string s2 = String.format("Hello %s, you are #%d", "world", 1);
     assert(s2 != NULL);
     assert(strcmp(s2, "Hello world, you are #1") == 0);
-    string_dispose(s2);
+    String.dispose(s2);
 
     // NULL format
-    assert(string_format(NULL) == NULL);
+    assert(String.format(NULL) == NULL);
 
     TEST_PASS();
 }
@@ -164,18 +164,18 @@ void test_string_format(void) {
 void test_string_to_array(void) {
     TEST_START("string_to_array");
 
-    string s = string_dupe("array");
-    char *arr = string_to_array(s);
+    string s = String.dupe("array");
+    char *arr = String.to_array(s);
 
     assert(arr != NULL);
     assert(strcmp(arr, "array") == 0);
     assert(arr != s);  // different pointers
 
-    string_dispose(s);
-    string_dispose(arr);  // both must be disposed separately
+    String.dispose(s);
+    String.dispose(arr);  // both must be disposed separately
 
     // NULL input
-    assert(string_to_array(NULL) == NULL);
+    assert(String.to_array(NULL) == NULL);
 
     TEST_PASS();
 }
@@ -184,7 +184,7 @@ void test_string_dispose_null(void) {
     TEST_START("string_dispose (NULL safe)");
 
     // Dispose NULL should not crash
-    string_dispose(NULL);
+    String.dispose(NULL);
 
     TEST_PASS();
 }
@@ -192,22 +192,22 @@ void test_string_dispose_null(void) {
 void test_string_lifecycle(void) {
     TEST_START("string lifecycle (allocate → use → dispose)");
 
-    string s1 = string_dupe("lifecycle");
+    string s1 = String.dupe("lifecycle");
     assert(s1 != NULL);
 
-    usize len = string_length(s1);
+    usize len = String.length(s1);
     assert(len == 9);
 
-    string s2 = string_copy(s1);
+    string s2 = String.copy(s1);
     assert(s2 != NULL);
 
-    string s3 = string_concat(s1, s2);
+    string s3 = String.concat(s1, s2);
     assert(s3 != NULL);
-    assert(string_length(s3) == 18);
+    assert(String.length(s3) == 18);
 
-    string_dispose(s1);
-    string_dispose(s2);
-    string_dispose(s3);
+    String.dispose(s1);
+    String.dispose(s2);
+    String.dispose(s3);
 
     TEST_PASS();
 }
@@ -219,17 +219,17 @@ void test_string_lifecycle(void) {
 void test_stringbuilder_new(void) {
     TEST_START("stringbuilder_new");
 
-    string_builder sb1 = stringbuilder_new(32);
+    string_builder sb1 = StringBuilder.new(32);
     assert(sb1 != NULL);
-    assert(stringbuilder_length(sb1) == 0);
-    assert(stringbuilder_capacity(sb1) >= 32);
-    stringbuilder_dispose(sb1);
+    assert(StringBuilder.length(sb1) == 0);
+    assert(StringBuilder.capacity(sb1) >= 32);
+    StringBuilder.dispose(sb1);
 
     // Zero capacity defaults to 16
-    string_builder sb2 = stringbuilder_new(0);
+    string_builder sb2 = StringBuilder.new(0);
     assert(sb2 != NULL);
-    assert(stringbuilder_capacity(sb2) >= 16);
-    stringbuilder_dispose(sb2);
+    assert(StringBuilder.capacity(sb2) >= 16);
+    StringBuilder.dispose(sb2);
 
     TEST_PASS();
 }
@@ -237,23 +237,23 @@ void test_stringbuilder_new(void) {
 void test_stringbuilder_snew(void) {
     TEST_START("stringbuilder_snew");
 
-    string s = string_dupe("initial");
-    string_builder sb = stringbuilder_snew(s);
+    string s = String.dupe("initial");
+    string_builder sb = StringBuilder.snew(s);
     assert(sb != NULL);
-    assert(stringbuilder_length(sb) == 7);
+    assert(StringBuilder.length(sb) == 7);
 
-    string result = stringbuilder_toString(sb);
+    string result = StringBuilder.toString(sb);
     assert(strcmp(result, "initial") == 0);
 
-    string_dispose(s);
-    string_dispose(result);
-    stringbuilder_dispose(sb);
+    String.dispose(s);
+    String.dispose(result);
+    StringBuilder.dispose(sb);
 
     // NULL creates empty builder
-    string_builder sb2 = stringbuilder_snew(NULL);
+    string_builder sb2 = StringBuilder.snew(NULL);
     assert(sb2 != NULL);
-    assert(stringbuilder_length(sb2) == 0);
-    stringbuilder_dispose(sb2);
+    assert(StringBuilder.length(sb2) == 0);
+    StringBuilder.dispose(sb2);
 
     TEST_PASS();
 }
@@ -261,20 +261,20 @@ void test_stringbuilder_snew(void) {
 void test_stringbuilder_append(void) {
     TEST_START("stringbuilder_append");
 
-    string_builder sb = stringbuilder_new(0);
+    string_builder sb = StringBuilder.new(0);
 
-    stringbuilder_append(sb, "Hello");
-    assert(stringbuilder_length(sb) == 5);
+    StringBuilder.append(sb, "Hello");
+    assert(StringBuilder.length(sb) == 5);
 
-    stringbuilder_append(sb, " ");
-    stringbuilder_append(sb, "World");
-    assert(stringbuilder_length(sb) == 11);
+    StringBuilder.append(sb, " ");
+    StringBuilder.append(sb, "World");
+    assert(StringBuilder.length(sb) == 11);
 
-    string result = stringbuilder_toString(sb);
+    string result = StringBuilder.toString(sb);
     assert(strcmp(result, "Hello World") == 0);
 
-    string_dispose(result);
-    stringbuilder_dispose(sb);
+    String.dispose(result);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -282,18 +282,18 @@ void test_stringbuilder_append(void) {
 void test_stringbuilder_appendf(void) {
     TEST_START("stringbuilder_appendf");
 
-    string_builder sb = stringbuilder_new(0);
+    string_builder sb = StringBuilder.new(0);
 
-    stringbuilder_appendf(sb, "Number: %d", 42);
-    assert(stringbuilder_length(sb) == 10);
+    StringBuilder.appendf(sb, "Number: %d", 42);
+    assert(StringBuilder.length(sb) == 10);
 
-    stringbuilder_appendf(sb, ", Float: %.2f", 3.14);
+    StringBuilder.appendf(sb, ", Float: %.2f", 3.14);
 
-    string result = stringbuilder_toString(sb);
+    string result = StringBuilder.toString(sb);
     assert(strcmp(result, "Number: 42, Float: 3.14") == 0);
 
-    string_dispose(result);
-    stringbuilder_dispose(sb);
+    String.dispose(result);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -301,18 +301,18 @@ void test_stringbuilder_appendf(void) {
 void test_stringbuilder_appendl(void) {
     TEST_START("stringbuilder_appendl");
 
-    string_builder sb = stringbuilder_new(0);
+    string_builder sb = StringBuilder.new(0);
 
-    stringbuilder_appendl(sb, "Line 1");
-    stringbuilder_appendl(sb, "Line 2");
-    stringbuilder_appendl(sb, NULL);  // just newline
-    stringbuilder_appendl(sb, "Line 4");
+    StringBuilder.appendl(sb, "Line 1");
+    StringBuilder.appendl(sb, "Line 2");
+    StringBuilder.appendl(sb, NULL);  // just newline
+    StringBuilder.appendl(sb, "Line 4");
 
-    string result = stringbuilder_toString(sb);
+    string result = StringBuilder.toString(sb);
     assert(strcmp(result, "Line 1\nLine 2\n\nLine 4\n") == 0);
 
-    string_dispose(result);
-    stringbuilder_dispose(sb);
+    String.dispose(result);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -320,17 +320,17 @@ void test_stringbuilder_appendl(void) {
 void test_stringbuilder_lappends(void) {
     TEST_START("stringbuilder_lappends");
 
-    string_builder sb = stringbuilder_new(0);
+    string_builder sb = StringBuilder.new(0);
 
-    stringbuilder_append(sb, "Start");
-    stringbuilder_lappends(sb, "Line 1");
-    stringbuilder_lappends(sb, "Line 2");
+    StringBuilder.append(sb, "Start");
+    StringBuilder.lappends(sb, "Line 1");
+    StringBuilder.lappends(sb, "Line 2");
 
-    string result = stringbuilder_toString(sb);
+    string result = StringBuilder.toString(sb);
     assert(strcmp(result, "Start\nLine 1\nLine 2") == 0);
 
-    string_dispose(result);
-    stringbuilder_dispose(sb);
+    String.dispose(result);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -338,17 +338,17 @@ void test_stringbuilder_lappends(void) {
 void test_stringbuilder_lappendf(void) {
     TEST_START("stringbuilder_lappendf");
 
-    string_builder sb = stringbuilder_new(0);
+    string_builder sb = StringBuilder.new(0);
 
-    stringbuilder_append(sb, "Header");
-    stringbuilder_lappendf(sb, "Value: %d", 100);
-    stringbuilder_lappendf(sb, "Another: %s", "test");
+    StringBuilder.append(sb, "Header");
+    StringBuilder.lappendf(sb, "Value: %d", 100);
+    StringBuilder.lappendf(sb, "Another: %s", "test");
 
-    string result = stringbuilder_toString(sb);
+    string result = StringBuilder.toString(sb);
     assert(strcmp(result, "Header\nValue: 100\nAnother: test") == 0);
 
-    string_dispose(result);
-    stringbuilder_dispose(sb);
+    String.dispose(result);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -356,19 +356,19 @@ void test_stringbuilder_lappendf(void) {
 void test_stringbuilder_clear(void) {
     TEST_START("stringbuilder_clear");
 
-    string_builder sb = stringbuilder_new(0);
+    string_builder sb = StringBuilder.new(0);
 
-    stringbuilder_append(sb, "Some content");
-    assert(stringbuilder_length(sb) > 0);
+    StringBuilder.append(sb, "Some content");
+    assert(StringBuilder.length(sb) > 0);
 
-    stringbuilder_clear(sb);
-    assert(stringbuilder_length(sb) == 0);
+    StringBuilder.clear(sb);
+    assert(StringBuilder.length(sb) == 0);
 
-    string result = stringbuilder_toString(sb);
+    string result = StringBuilder.toString(sb);
     assert(strcmp(result, "") == 0);
 
-    string_dispose(result);
-    stringbuilder_dispose(sb);
+    String.dispose(result);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -376,21 +376,21 @@ void test_stringbuilder_clear(void) {
 void test_stringbuilder_toString(void) {
     TEST_START("stringbuilder_toString");
 
-    string_builder sb = stringbuilder_new(0);
-    stringbuilder_append(sb, "convert");
+    string_builder sb = StringBuilder.new(0);
+    StringBuilder.append(sb, "convert");
 
-    string s1 = stringbuilder_toString(sb);
+    string s1 = StringBuilder.toString(sb);
     assert(s1 != NULL);
     assert(strcmp(s1, "convert") == 0);
 
     // Append more and convert again
-    stringbuilder_append(sb, " more");
-    string s2 = stringbuilder_toString(sb);
+    StringBuilder.append(sb, " more");
+    string s2 = StringBuilder.toString(sb);
     assert(strcmp(s2, "convert more") == 0);
 
-    string_dispose(s1);
-    string_dispose(s2);
-    stringbuilder_dispose(sb);
+    String.dispose(s1);
+    String.dispose(s2);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -398,21 +398,21 @@ void test_stringbuilder_toString(void) {
 void test_stringbuilder_capacity(void) {
     TEST_START("stringbuilder_capacity");
 
-    string_builder sb = stringbuilder_new(64);
-    assert(stringbuilder_capacity(sb) >= 64);
+    string_builder sb = StringBuilder.new(64);
+    assert(StringBuilder.capacity(sb) >= 64);
 
-    usize initial_capacity = stringbuilder_capacity(sb);
+    usize initial_capacity = StringBuilder.capacity(sb);
 
     // Set larger capacity
-    stringbuilder_setCapacity(sb, 128);
-    assert(stringbuilder_capacity(sb) >= 128);
-    assert(stringbuilder_capacity(sb) > initial_capacity);
+    StringBuilder.setCapacity(sb, 128);
+    assert(StringBuilder.capacity(sb) >= 128);
+    assert(StringBuilder.capacity(sb) > initial_capacity);
 
     // Set smaller capacity (should be ignored)
-    stringbuilder_setCapacity(sb, 32);
-    assert(stringbuilder_capacity(sb) >= 128);  // unchanged
+    StringBuilder.setCapacity(sb, 32);
+    assert(StringBuilder.capacity(sb) >= 128);  // unchanged
 
-    stringbuilder_dispose(sb);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }
@@ -421,7 +421,7 @@ void test_stringbuilder_dispose_null(void) {
     TEST_START("stringbuilder_dispose (NULL safe)");
 
     // Dispose NULL should not crash
-    stringbuilder_dispose(NULL);
+    StringBuilder.dispose(NULL);
 
     TEST_PASS();
 }
@@ -430,24 +430,24 @@ void test_stringbuilder_lifecycle(void) {
     TEST_START("stringbuilder lifecycle");
 
     // Create builder
-    string_builder sb = stringbuilder_new(16);
+    string_builder sb = StringBuilder.new(16);
     assert(sb != NULL);
 
     // Build up content
-    stringbuilder_append(sb, "Part1");
-    stringbuilder_appendf(sb, " %d", 2);
-    stringbuilder_appendl(sb, " Part3");
+    StringBuilder.append(sb, "Part1");
+    StringBuilder.appendf(sb, " %d", 2);
+    StringBuilder.appendl(sb, " Part3");
 
-    usize len = stringbuilder_length(sb);
+    usize len = StringBuilder.length(sb);
     assert(len > 0);
 
     // Convert to string
-    string final = stringbuilder_toString(sb);
+    string final = StringBuilder.toString(sb);
     assert(strcmp(final, "Part1 2 Part3\n") == 0);
 
     // Cleanup
-    string_dispose(final);
-    stringbuilder_dispose(sb);
+    String.dispose(final);
+    StringBuilder.dispose(sb);
 
     TEST_PASS();
 }

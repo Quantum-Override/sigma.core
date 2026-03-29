@@ -24,63 +24,73 @@
 
 ## API Functions (22 total)
 
+**VTable-Only Public API** — All functions are accessed through global vtable instances (`String` and `StringBuilder`). This matches sigma.core's pattern for public interfaces.
+
 **ABI-compatible with sigma.core/strings.h** — functions match vtable signatures exactly for drop-in compatibility.
 
 ### String API (8 functions)
 
+Access through `String` vtable:
+
+Access through `String` vtable:
+
 #### String Lifecycle
-- `string string_dupe(const char *cstr)` — Create string from C string
-- `string string_copy(string src)` — Duplicate existing string
-- `void string_dispose(string s)` — Free string memory
+- `String.dupe(const char *cstr)` — Create string from C string
+- `String.copy(string src)` — Duplicate existing string
+- `String.dispose(string s)` — Free string memory
 
 #### String Operations
-- `usize string_length(string s)` — Get string length
-- `string string_concat(string s1, string s2)` — Concatenate two strings
-- `int string_compare(string s1, string s2)` — Compare strings (strcmp wrapper)
-- `string string_format(string fmt, ...)` — Create formatted string (printf-style)
+- `String.length(string s)` — Get string length
+- `String.concat(string s1, string s2)` — Concatenate two strings
+- `String.compare(string s1, string s2)` — Compare strings (strcmp wrapper)
+- `String.format(string fmt, ...)` — Create formatted string (printf-style)
 
 #### Utilities
-- `char *string_to_array(string s)` — Copy string to char array
+- `String.to_array(string s)` — Copy string to char array
 
 ### StringBuilder API (14 functions)
 
+Access through `StringBuilder` vtable:
+
 #### StringBuilder Lifecycle
-- `string_builder stringbuilder_new(usize capacity)` — Create new builder (0 defaults to 16)
-- `string_builder stringbuilder_snew(string str)` — Create builder from existing string
-- `void stringbuilder_dispose(string_builder sb)` — Free builder memory
+- `StringBuilder.new(usize capacity)` — Create new builder (0 defaults to 16)
+- `StringBuilder.snew(string str)` — Create builder from existing string
+- `StringBuilder.dispose(string_builder sb)` — Free builder memory
 
 #### StringBuilder Operations
-- `void stringbuilder_append(string_builder sb, string str)` — Append string
-- `void stringbuilder_appendf(string_builder sb, string fmt, ...)` — Append formatted string
-- `void stringbuilder_appendl(string_builder sb, string str)` — Append string + newline
-- `void stringbuilder_lappends(string_builder sb, string str)` — Append newline + string
-- `void stringbuilder_lappendf(string_builder sb, string fmt, ...)` — Append newline + formatted string
-- `void stringbuilder_clear(string_builder sb)` — Reset to empty
+- `StringBuilder.append(string_builder sb, string str)` — Append string
+- `StringBuilder.appendf(string_builder sb, string fmt, ...)` — Append formatted string
+- `StringBuilder.appendl(string_builder sb, string str)` — Append string + newline
+- `StringBuilder.lappends(string_builder sb, string str)` — Append newline + string
+- `StringBuilder.lappendf(string_builder sb, string fmt, ...)` — Append newline + formatted string
+- `StringBuilder.clear(string_builder sb)` — Reset to empty
 
 #### StringBuilder Conversion
-- `string stringbuilder_toString(string_builder sb)` — Convert to new string
-- `void stringbuilder_toStream(string_builder sb, FILE *stream)` — Write to stream
+- `StringBuilder.toString(string_builder sb)` — Convert to new string
+- `StringBuilder.toStream(string_builder sb, FILE *stream)` — Write to stream
 
 #### StringBuilder Queries
-- `usize stringbuilder_length(string_builder sb)` — Get current length
-- `usize stringbuilder_capacity(string_builder sb)` — Get current capacity
-- `void stringbuilder_setCapacity(string_builder sb, usize new_capacity)` — Set capacity
+- `StringBuilder.length(string_builder sb)` — Get current length
+- `StringBuilder.capacity(string_builder sb)` — Get current capacity
+- `StringBuilder.setCapacity(string_builder sb, usize new_capacity)` — Set capacity
 
 ### VTable Usage
 
-**Direct calls:**
-```c
-string s = string_dupe("hello");
-string_dispose(s);
-```
-
-**VTable calls (ABI-compatible with controller variant):**
+**All functions are accessed through vtables:**
 ```c
 string s = String.dupe("hello");
 String.dispose(s);
+
+string_builder sb = StringBuilder.new(64);
+StringBuilder.append(sb, "world");
+string result = StringBuilder.toString(sb);
+StringBuilder.dispose(sb);
+String.dispose(result);
 ```
 
-**Memory rule:** All functions returning `string` or `string_builder` allocate memory — caller must dispose.
+**Free function declarations are NOT in public header** — only vtable instances (`String`, `StringBuilder`) are exposed.
+
+**Memory rule:** All functions returning `string` or `string_builder` allocate memory — caller must dispose using vtable functions (`String.dispose()`, `StringBuilder.dispose()`).
 
 ---
 

@@ -62,9 +62,18 @@ typedef struct sc_reclaim_ctrl_s *reclaim_allocator;  // MTIS controller
 // Used by Text interfaces (String, StringBuilder) and SIGMA_ROLE_ISOLATED modules
 // as an optional allocator configuration.  NULL fields (or a NULL pointer to
 // this struct) fall back to system malloc / free / realloc.
+//
+// LAYOUT GUARANTEE (FR-2603-sigma-core-005):
+// - ctrl is FIRST member (offset 0) for cast compatibility
+// - Enables: (sc_alloc_use_t*)ctrl and (sc_ctrl_base_s*)use casts
 typedef struct sc_alloc_use_s {
+    /** Controller state pointer (offset 0, can be NULL for non-controller hooks) */
+    sc_ctrl_base_s *ctrl;
+    /** Allocate memory */
     void *(*alloc)(usize size);
+    /** Free memory */
     void (*release)(void *ptr);
+    /** Resize allocation */
     void *(*resize)(void *ptr, usize size);
     /** Save current cursor/sequence tag; returns FRAME_NULL on failure or if
      *  frames are not supported.  NULL field = no frame support. */
@@ -93,7 +102,7 @@ typedef struct sc_allocator_i {
 
     // Top-level facade — always dispatches to SLB0 reclaim ctrl (R7 fixed)
     object (*alloc)(usize size);
-    void (*free)(object ptr);
+    void (*dispose)(object ptr);
     object (*realloc)(object ptr, usize new_size);
 
     // Phase 4: custom factory + external registration (appended to preserve ABI)

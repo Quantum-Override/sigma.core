@@ -131,11 +131,11 @@ void test_to_array(void) {
     char *nullArr = String.to_array(NULL);
     Assert.isNull(nullArr, "to_array of NULL should be NULL");
 
-    Allocator.free(arr);  // to_array returns allocated memory
+    Allocator.dispose(arr);  // to_array returns allocated memory
 }
 
 // Register tests
-__attribute__((constructor)) void init_strings_tests(void) {
+static void register_strings_tests(void) {
     testset("text_strings_set", set_config, set_teardown);
 
     testcase("String length", test_get_length);
@@ -145,4 +145,8 @@ __attribute__((constructor)) void init_strings_tests(void) {
     testcase("String format", test_format_string);
     testcase("String dupe", test_dupe_string);
     testcase("String to array", test_to_array);
+}
+
+__attribute__((constructor)) static void enqueue_strings_tests(void) {
+    Tests.enqueue(register_strings_tests);
 }
