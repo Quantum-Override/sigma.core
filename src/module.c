@@ -69,7 +69,7 @@ int sigma_module_init_all(void) {
         const sigma_module_t *mod = init_order[i];
         if (mod->role != SIGMA_ROLE_SYSTEM) continue;
 
-        void *ctx = NULL; // SYSTEM modules always get NULL context
+        void *ctx = NULL;  // SYSTEM modules always get NULL context
         if (mod->init) {
             int result = mod->init(ctx);
             if (result != 0) {
@@ -87,7 +87,7 @@ int sigma_module_init_all(void) {
     // Phase 3: Initialize remaining modules (in topological order)
     for (int i = 0; i < (int)init_count; i++) {
         const sigma_module_t *mod = init_order[i];
-        if (mod->role == SIGMA_ROLE_SYSTEM) continue; // Already initialized
+        if (mod->role == SIGMA_ROLE_SYSTEM) continue;  // Already initialized
 
         void *ctx = NULL;
         if (mod->role == SIGMA_ROLE_TRUSTED) {
@@ -149,7 +149,7 @@ void sigma_module_set_trusted_app_grant(sc_trusted_app_grant_fn fn) { trusted_ap
 
 void sigma_module_set_arena_provider(sc_arena_provider_fn fn) { arena_provider = fn; }
 
-static void sigma_module_set_bootstrap(sc_app_bootstrap_fn fn) { bootstrap_fn = fn; }
+void sigma_module_set_bootstrap(sc_app_bootstrap_fn fn) { bootstrap_fn = fn; }
 
 #ifdef TSTDBG
 void sigma_module_reset(void) {

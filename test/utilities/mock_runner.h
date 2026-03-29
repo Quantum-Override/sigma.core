@@ -27,12 +27,12 @@ static bool mock_test_failed = false;
  *
  * Assert a condition is true. If false, print message and mark test as failed.
  */
-#define MOCK_ASSERT(cond, msg)                                                                     \
-    do {                                                                                           \
-        if (!(cond)) {                                                                             \
-            fprintf(stderr, "  [FAIL] %s:%d: %s\n", __FILE__, __LINE__, (msg));                    \
-            mock_test_failed = true;                                                               \
-        }                                                                                          \
+#define MOCK_ASSERT(cond, msg)                                                  \
+    do {                                                                        \
+        if (!(cond)) {                                                          \
+            fprintf(stderr, "  [FAIL] %s:%d: %s\n", __FILE__, __LINE__, (msg)); \
+            mock_test_failed = true;                                            \
+        }                                                                       \
     } while (0)
 
 /*
