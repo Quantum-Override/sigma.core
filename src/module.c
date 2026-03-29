@@ -93,7 +93,7 @@ int sigma_module_init_all(void) {
         if (mod->role == SIGMA_ROLE_TRUSTED) {
             ctx =
                 trusted_grant ? trusted_grant(mod->name, mod->arena_size, mod->arena_policy) : NULL;
-        } else if (mod->role == SIGMA_ROLE_TRUSTED_APP) {
+        } else if (mod->role == SIGMA_ROLE_APPLICATION) {
             ctx = trusted_app_grant
                       ? trusted_app_grant(mod->name, mod->arena_size, mod->arena_policy)
                       : NULL;

@@ -66,13 +66,13 @@ static const sigma_module_t core_mod = {.name = "boot.core",
                                         .shutdown = core_shutdown};
 static const sigma_module_t service_mod = {.name = "boot.service",
                                            .version = "1.0.0",
-                                           .role = SIGMA_ROLE_USER,
+                                           .role = SIGMA_ROLE_PERIPHERAL,
                                            .deps = svc_deps,
                                            .init = service_init,
                                            .shutdown = service_shutdown};
 static const sigma_module_t app_mod = {.name = "boot.app",
                                        .version = "1.0.0",
-                                       .role = SIGMA_ROLE_USER,
+                                       .role = SIGMA_ROLE_PERIPHERAL,
                                        .deps = app_deps,
                                        .init = app_init,
                                        .shutdown = app_shutdown};
@@ -129,7 +129,7 @@ static int isolated_init_fn(void *ctx) {
 }
 static const sigma_module_t iso_mod = {.name = "boot.iso",
                                        .version = "1.0.0",
-                                       .role = SIGMA_ROLE_USER,
+                                       .role = SIGMA_ROLE_PERIPHERAL,
                                        .alloc = SIGMA_ALLOC_ARENA,
                                        .deps = no_deps,
                                        .init = isolated_init_fn,
@@ -161,7 +161,7 @@ static void custom_panic(const char *mod, const char *reason) {
 static const char *bad_dep[] = {"does.not.exist", NULL};
 static const sigma_module_t bad_mod = {.name = "boot.bad",
                                        .version = "1.0.0",
-                                       .role = SIGMA_ROLE_USER,
+                                       .role = SIGMA_ROLE_PERIPHERAL,
                                        .deps = bad_dep,
                                        .init = core_init,
                                        .shutdown = NULL};

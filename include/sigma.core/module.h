@@ -47,29 +47,32 @@ typedef struct sc_alloc_use_s sc_alloc_use_t;      // full def in sigma.core/all
  * @brief Role determines what ctx is passed to init() and in what order modules
  *        are initialised relative to sigma.memory.
  *
- *   SYSTEM       — no deps, init(NULL); comes first in topo order.  Used by
- *                  sigma.memory and sigma.core itself.
- *   TRUSTED      — init(sc_trusted_cap_t*); sigma.memory grants a full capability
- *                  struct.  Used by sigma.tasking (Ring1 system slots).
- *   USER         — init(ctx) where ctx is determined by the alloc field.
- *                  Used by sigma.text, sigma.collections, etc.
- *   TRUSTED_APP  — init(sc_trusted_cap_t*); sigma.memory grants a capability
- *                  from the app-tier pool.  First-party modules we own and audit
- *                  but that must not consume Ring1 system slots (e.g. sigma.test).
+ *   PERIPHERAL   — Supporting libraries; init(ctx) where ctx is determined by alloc field.
+ *                  Used by sigma.text, sigma.collections, anvil, etc.
+ *                  Zero-init default for library modules.
+ *   TRUSTED      — Ring1 services; init(sc_trusted_cap_t*); sigma.memory grants a full
+ *                  capability struct. Used by sigma.tasking (Ring1 system slots).
+ *   APPLICATION  — Executables with main(); init(sc_trusted_cap_t*); sigma.memory grants
+ *                  a capability from the app-tier pool. First-party modules we own and
+ *                  audit (e.g. sigma.test, sigma.cli). Use Module.set_bootstrap() for
+ *                  early setup.
+ *   SYSTEM       — Core infrastructure; init(NULL); comes first in topo order.
+ *                  Only sigma.memory uses this role. Must be explicitly set (value 99).
  */
 typedef enum {
-    SIGMA_ROLE_SYSTEM = 0,
-    SIGMA_ROLE_TRUSTED = 1,
-    SIGMA_ROLE_USER = 2,
-    SIGMA_ROLE_TRUSTED_APP = 3, /**< first-party app tier; separate cap pool */
+    SIGMA_ROLE_PERIPHERAL = 0,  /**< supporting libraries (zero-init default) */
+    SIGMA_ROLE_TRUSTED = 1,     /**< Ring1 services */
+    SIGMA_ROLE_APPLICATION = 2, /**< executables with main() */
+    SIGMA_ROLE_SYSTEM = 99,     /**< core infrastructure (sigma.memory only) */
 } sc_module_role;
 
 // ── Allocator designation ──────────────────────────────────────────────────
 /**
- * @brief Controls what ctx is passed to init() for non-TRUSTED modules.
+ * @brief Controls what ctx is passed to init() for PERIPHERAL modules.
+ *        (Ignored for TRUSTED, APPLICATION, and SYSTEM roles.)
  *
- *   DEFAULT — ctx = NULL.  Module uses the global Allocator (SLB0).
- *             Zero-initialised descriptors get this behaviour for free.
+ *   DEFAULT — ctx = NULL.  Module uses Application.get_allocator() (configured
+ *             via bootstrap or defaults to SLB0). Zero-init default.
  *   SYSTEM  — ctx = sc_alloc_use_t* pointing to {malloc, free, realloc}.
  *             Module receives stdlib hooks with no slab involvement.
  *   ARENA   — ctx = sc_alloc_use_t* returned by the registered arena_provider.

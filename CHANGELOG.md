@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.0] — 2026-03-29
+
+### Changed
+- module.h: BREAKING — Renamed SIGMA_ROLE_USER to SIGMA_ROLE_PERIPHERAL (better describes supporting libraries)
+- module.h: BREAKING — Renamed SIGMA_ROLE_TRUSTED_APP to SIGMA_ROLE_APPLICATION (clearer for executables)
+- module.h: BREAKING — Changed SIGMA_ROLE_SYSTEM from 0 to 99 (explicit value, only sigma.memory uses this)
+- module.h: BREAKING — SIGMA_ROLE_PERIPHERAL is now 0 (zero-init default for libraries)
+- docs/Using The Module System.md: Updated role descriptions and terminology for PERIPHERAL/APPLICATION
+
+### Breaking Changes
+- Enum value changes break binary compatibility — recompile all modules
+- SIGMA_ROLE_USER → SIGMA_ROLE_PERIPHERAL (source incompatible)
+- SIGMA_ROLE_TRUSTED_APP → SIGMA_ROLE_APPLICATION (source incompatible)
+- SIGMA_ROLE_SYSTEM value changed from 0 to 99 (binary incompatible)
+
+**Migration:** Update sigma.memory: keep .role=SIGMA_ROLE_SYSTEM (value auto-updates to 99). Update sigma.test/sigma.cli: change SIGMA_ROLE_TRUSTED_APP to SIGMA_ROLE_APPLICATION. All library modules: optionally change SIGMA_ROLE_USER to SIGMA_ROLE_PERIPHERAL or rely on zero-init default.
+
+---
+
 ## [1.2.0] — 2026-03-28
 
 ### Added

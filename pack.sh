@@ -7,7 +7,7 @@
 #
 # post_pack — reserved; currently a no-op.
 
-SC_CORE_VERSION="1.0.0"
+SC_CORE_VERSION="1.3.0"
 SC_BUILD_NUMBER_FILE=".build_number"
 SC_VERSION_HEADER="include/sigma.core/version.h"
 

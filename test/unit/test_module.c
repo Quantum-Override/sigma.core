@@ -71,20 +71,20 @@ static const char *deps_a[] = {"mod.a", NULL};
 /* ── Module descriptors ─────────────────────────────────────────────────── */
 static const sigma_module_t mod_a = {.name = "mod.a",
                                      .version = "0.0.1",
-                                     .role = SIGMA_ROLE_USER,
+                                     .role = SIGMA_ROLE_PERIPHERAL,
                                      .deps = no_deps,
                                      .init = stub_a_init,
                                      .shutdown = stub_a_shutdown};
 static const sigma_module_t mod_b_dep_a = {.name = "mod.b",
                                            .version = "0.0.1",
-                                           .role = SIGMA_ROLE_USER,
+                                           .role = SIGMA_ROLE_PERIPHERAL,
                                            .deps = deps_a,
                                            .init = stub_b_init,
                                            .shutdown = stub_b_shutdown};
 
 static const sigma_module_t mod_b_nodep = {.name = "mod.b",
                                            .version = "0.0.1",
-                                           .role = SIGMA_ROLE_USER,
+                                           .role = SIGMA_ROLE_PERIPHERAL,
                                            .deps = no_deps,
                                            .init = stub_b_init,
                                            .shutdown = stub_b_shutdown};
@@ -96,7 +96,7 @@ static int fail_init(void *ctx) {
 }
 static const sigma_module_t mod_fail = {.name = "mod.fail",
                                         .version = "0.0.1",
-                                        .role = SIGMA_ROLE_USER,
+                                        .role = SIGMA_ROLE_PERIPHERAL,
                                         .deps = no_deps,
                                         .init = fail_init,
                                         .shutdown = NULL};
@@ -108,7 +108,7 @@ static int after_fail_init(void *ctx) {
 }
 static const sigma_module_t mod_after_fail = {.name = "mod.after",
                                               .version = "0.0.1",
-                                              .role = SIGMA_ROLE_USER,
+                                              .role = SIGMA_ROLE_PERIPHERAL,
                                               .deps = no_deps,
                                               .init = after_fail_init,
                                               .shutdown = NULL};
@@ -128,7 +128,7 @@ static const sigma_module_t mod_trusted = {.name = "mod.trusted",
                                            .shutdown = NULL};
 static const sigma_module_t mod_isolated = {.name = "mod.isolated",
                                             .version = "0.0.1",
-                                            .role = SIGMA_ROLE_USER,
+                                            .role = SIGMA_ROLE_PERIPHERAL,
                                             .alloc = SIGMA_ALLOC_ARENA,
                                             .deps = no_deps,
                                             .init = stub_c_init,
@@ -148,7 +148,7 @@ static int alloc_custom_init(void *ctx) {
 
 static const sigma_module_t mod_alloc_system = {.name = "mod.alloc_sys",
                                                 .version = "0.0.1",
-                                                .role = SIGMA_ROLE_USER,
+                                                .role = SIGMA_ROLE_PERIPHERAL,
                                                 .alloc = SIGMA_ALLOC_SYSTEM,
                                                 .deps = no_deps,
                                                 .init = alloc_sys_init,
@@ -171,7 +171,7 @@ static sc_alloc_use_t custom_hooks = {
 };
 static const sigma_module_t mod_alloc_custom = {.name = "mod.alloc_custom",
                                                 .version = "0.0.1",
-                                                .role = SIGMA_ROLE_USER,
+                                                .role = SIGMA_ROLE_PERIPHERAL,
                                                 .alloc = SIGMA_ALLOC_CUSTOM,
                                                 .alloc_hooks = &custom_hooks,
                                                 .deps = no_deps,
@@ -183,13 +183,13 @@ static const char *cycle_deps_a[] = {"cycle.b", NULL};
 static const char *cycle_deps_b[] = {"cycle.a", NULL};
 static const sigma_module_t mod_cycle_a = {.name = "cycle.a",
                                            .version = "0.0.1",
-                                           .role = SIGMA_ROLE_USER,
+                                           .role = SIGMA_ROLE_PERIPHERAL,
                                            .deps = cycle_deps_a,
                                            .init = stub_a_init,
                                            .shutdown = NULL};
 static const sigma_module_t mod_cycle_b = {.name = "cycle.b",
                                            .version = "0.0.1",
-                                           .role = SIGMA_ROLE_USER,
+                                           .role = SIGMA_ROLE_PERIPHERAL,
                                            .deps = cycle_deps_b,
                                            .init = stub_b_init,
                                            .shutdown = NULL};
@@ -198,7 +198,7 @@ static const sigma_module_t mod_cycle_b = {.name = "cycle.b",
 static const char *missing_dep[] = {"does.not.exist", NULL};
 static const sigma_module_t mod_missing = {.name = "mod.missing",
                                            .version = "0.0.1",
-                                           .role = SIGMA_ROLE_USER,
+                                           .role = SIGMA_ROLE_PERIPHERAL,
                                            .deps = missing_dep,
                                            .init = stub_a_init,
                                            .shutdown = NULL};
@@ -290,14 +290,14 @@ static int seq_b_init(void *ctx) {
 }
 static const sigma_module_t mod_seq_a = {.name = "seq.a",
                                          .version = "0.0.1",
-                                         .role = SIGMA_ROLE_USER,
+                                         .role = SIGMA_ROLE_PERIPHERAL,
                                          .deps = no_deps,
                                          .init = seq_a_init,
                                          .shutdown = NULL};
 static const char *seq_b_deps[] = {"seq.a", NULL};
 static const sigma_module_t mod_seq_b = {.name = "seq.b",
                                          .version = "0.0.1",
-                                         .role = SIGMA_ROLE_USER,
+                                         .role = SIGMA_ROLE_PERIPHERAL,
                                          .deps = seq_b_deps,
                                          .init = seq_b_init,
                                          .shutdown = NULL};
@@ -346,28 +346,28 @@ static int dd_init(void *ctx) {
 
 static const sigma_module_t dm_a = {.name = "dm.a",
                                     .version = "0.0.1",
-                                    .role = SIGMA_ROLE_USER,
+                                    .role = SIGMA_ROLE_PERIPHERAL,
                                     .deps = no_deps,
                                     .init = da_init,
                                     .shutdown = NULL};
 static const char *dm_b_deps[] = {"dm.a", NULL};
 static const sigma_module_t dm_b = {.name = "dm.b",
                                     .version = "0.0.1",
-                                    .role = SIGMA_ROLE_USER,
+                                    .role = SIGMA_ROLE_PERIPHERAL,
                                     .deps = dm_b_deps,
                                     .init = db_init,
                                     .shutdown = NULL};
 static const char *dm_c_deps[] = {"dm.a", NULL};
 static const sigma_module_t dm_c = {.name = "dm.c",
                                     .version = "0.0.1",
-                                    .role = SIGMA_ROLE_USER,
+                                    .role = SIGMA_ROLE_PERIPHERAL,
                                     .deps = dm_c_deps,
                                     .init = dc_init,
                                     .shutdown = NULL};
 static const char *dm_d_deps[] = {"dm.b", "dm.c", NULL};
 static const sigma_module_t dm_d = {.name = "dm.d",
                                     .version = "0.0.1",
-                                    .role = SIGMA_ROLE_USER,
+                                    .role = SIGMA_ROLE_PERIPHERAL,
                                     .deps = dm_d_deps,
                                     .init = dd_init,
                                     .shutdown = NULL};
@@ -408,14 +408,14 @@ static int sd_b_init(void *ctx) {
 
 static const sigma_module_t sd_a = {.name = "sd.a",
                                     .version = "0.0.1",
-                                    .role = SIGMA_ROLE_USER,
+                                    .role = SIGMA_ROLE_PERIPHERAL,
                                     .deps = no_deps,
                                     .init = sd_a_init,
                                     .shutdown = sd_a_shutdown};
 static const char *sd_b_deps[] = {"sd.a", NULL};
 static const sigma_module_t sd_b = {.name = "sd.b",
                                     .version = "0.0.1",
-                                    .role = SIGMA_ROLE_USER,
+                                    .role = SIGMA_ROLE_PERIPHERAL,
                                     .deps = sd_b_deps,
                                     .init = sd_b_init,
                                     .shutdown = sd_b_shutdown};
@@ -551,7 +551,7 @@ static void test_max_modules(void) {
         snprintf(extra_name_buf[i], sizeof(extra_name_buf[i]), "m%02d", i);
         extra_mods[i].name = extra_name_buf[i];
         extra_mods[i].version = "0.0.1";
-        extra_mods[i].role = SIGMA_ROLE_USER;
+        extra_mods[i].role = SIGMA_ROLE_PERIPHERAL;
         extra_mods[i].deps = no_deps;
         extra_mods[i].init = NULL;
         extra_mods[i].shutdown = NULL;
@@ -562,7 +562,7 @@ static void test_max_modules(void) {
     snprintf(extra_name_buf[32], sizeof(extra_name_buf[32]), "m32");
     extra_mods[32].name = extra_name_buf[32];
     extra_mods[32].version = "0.0.1";
-    extra_mods[32].role = SIGMA_ROLE_USER;
+    extra_mods[32].role = SIGMA_ROLE_PERIPHERAL;
     extra_mods[32].deps = no_deps;
     extra_mods[32].init = NULL;
     extra_mods[32].shutdown = NULL;
@@ -631,7 +631,7 @@ static void test_bootstrap_timing(void) {
     reset_bootstrap_state();
 
     /* mod_system is SIGMA_ROLE_SYSTEM using stub_a */
-    /* mod_b_nodep is SIGMA_ROLE_USER using stub_b */
+    /* mod_b_nodep is SIGMA_ROLE_PERIPHERAL using stub_b */
     sigma_module_register(&mod_system);
     sigma_module_register(&mod_b_nodep);
 

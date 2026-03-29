@@ -5,7 +5,7 @@
 #pragma once
 
 /** Human-readable package version (semver). */
-#define SC_CORE_VERSION "1.0.0"
+#define SC_CORE_VERSION "1.3.0"
 
 /** Monotone build counter — incremented on every cpkg core run. */
-#define SC_CORE_BUILD   15
+#define SC_CORE_BUILD   20

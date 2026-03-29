@@ -45,7 +45,7 @@ static const char *my_deps[] = { "sigma.memory", NULL };
 static const sigma_module_t my_module = {
     .name     = "my.project",
     .version  = "0.1.0",
-    .role     = SIGMA_ROLE_USER,
+    .role     = SIGMA_ROLE_PERIPHERAL,
     .alloc    = SIGMA_ALLOC_DEFAULT,
     .deps     = my_deps,
     .init     = my_module_init,
@@ -201,7 +201,8 @@ If registered via `Module.set_bootstrap()`, the bootstrap function runs here. Al
 ### Phase 3: Remaining Modules
 All non-SYSTEM modules initialize in topological order:
 - `SIGMA_ROLE_TRUSTED` modules (if any)
-- `SIGMA_ROLE_USER` modules (libraries and applications)
+- `SIGMA_ROLE_PERIPHERAL` modules (libraries)
+- `SIGMA_ROLE_APPLICATION` modules (executables)
 
 Context passed: depends on `role` and `alloc` designation
 
@@ -246,16 +247,17 @@ the first call does any work.
 
 | Role | Who uses it | `init()` ctx |
 |---|---|---|
-| `SIGMA_ROLE_SYSTEM` | sigma.memory, sigma.core | `NULL` |
+| `SIGMA_ROLE_SYSTEM` | sigma.memory only | `NULL` |
 | `SIGMA_ROLE_TRUSTED` | sigma.tasking | `sc_trusted_cap_t *` granted by sigma.memory |
-| `SIGMA_ROLE_USER` | everything else | depends on `alloc` field |
+| `SIGMA_ROLE_PERIPHERAL` | libraries (sigma.text, sigma.collections, anvil, etc.) | depends on `alloc` field |
+| `SIGMA_ROLE_APPLICATION` | executables with main() (sigma.test, sigma.cli, etc.) | `sc_trusted_cap_t *` from app-tier pool |
 
 Roles affect *ordering*, not just the ctx argument.  All `SYSTEM` modules
-initialise before `TRUSTED`, which initialise before `USER`.
+initialise before `TRUSTED`, which initialise before `PERIPHERAL` and `APPLICATION`.
 
 ---
 
-## Allocator Designation (USER modules)
+## Allocator Designation (PERIPHERAL modules)
 
 The `alloc` field on the descriptor controls what ctx `init()` receives and how
 memory is routed to the module.
@@ -275,7 +277,7 @@ configuration required for the common case.
 ```c
 static const sigma_module_t my_module = {
     .name  = "my.sandboxed",
-    .role  = SIGMA_ROLE_USER,
+    .role  = SIGMA_ROLE_PERIPHERAL,
     .alloc = SIGMA_ALLOC_ARENA,   // init() receives arena-backed sc_alloc_use_t*
     .deps  = (const char*[]){ "sigma.memory", NULL },
     .init  = my_module_init,
@@ -305,7 +307,7 @@ static sc_alloc_use_t my_hooks = {
 
 static const sigma_module_t my_module = {
     .name        = "my.pooled",
-    .role        = SIGMA_ROLE_USER,
+    .role        = SIGMA_ROLE_PERIPHERAL,
     .alloc       = SIGMA_ALLOC_CUSTOM,
     .alloc_hooks = &my_hooks,
     .deps        = (const char*[]){ NULL },
