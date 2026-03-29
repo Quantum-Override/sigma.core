@@ -2,6 +2,10 @@
 
 **Applies to:** sigma.core `module.h` / `module.c`
 
+**Version Updates:**
+- **v1.2.0**: Added `Module` Vtable interface, application bootstrap hook (`Module.set_bootstrap`), and 3-phase initialization
+- **v1.0.0**: Initial module system with topological dependency resolution
+
 ---
 
 ## Why the Module System Exists
@@ -66,7 +70,157 @@ static void my_module_shutdown(void) {
 
 ---
 
-## Calling init\_all from main()
+## Module Interface (Vtable Pattern)
+
+**Since:** v1.2.0
+
+The module system provides a global `Module` interface for consistent access to lifecycle functions:
+
+```c
+#include <sigma.core/module.h>
+
+int main(void) {
+    if (Module.init_all() != 0) {
+        return 1;   // init failed; panic hook already fired
+    }
+
+    // application work here
+
+    Module.shutdown_all();
+    return 0;
+}
+```
+
+### Module Interface API
+
+```c
+typedef struct sc_module_i {
+    int  (*register_module)(const sigma_module_t *mod);
+    int  (*init_all)(void);
+    void (*shutdown_all)(void);
+    void (*set_bootstrap)(sc_app_bootstrap_fn fn);
+} sc_module_i;
+
+extern const sc_module_i Module;
+```
+
+| Function | Description |
+|---|---|
+| `Module.register_module(mod)` | Register a module descriptor (same as `sigma_module_register`) |
+| `Module.init_all()` | Initialize all modules in 3 phases (same as `sigma_module_init_all`) |
+| `Module.shutdown_all()` | Shutdown all modules in reverse order (same as `sigma_module_shutdown_all`) |
+| `Module.set_bootstrap(fn)` | Register application early setup hook (runs after SYSTEM, before others) |
+
+**Legacy functions** (`sigma_module_register`, `sigma_module_init_all`, `sigma_module_shutdown_all`) remain available for backward compatibility. New code should prefer the `Module` interface.
+
+---
+
+## Application Bootstrap Hook
+
+**Since:** v1.2.0  
+**Use case:** Configure global resources (allocators, logging) after SYSTEM modules initialize but before ecosystem modules consume those resources.
+
+### The Problem
+
+Applications often need to configure allocators via `Application.set_allocator()` after `sigma.memory` initializes. However, if the application depends on ecosystem modules (anvil, sigma.string, etc.), those modules initialize **before** the application's `init()` hook runs:
+
+```
+sigma.memory.init()  ✓ (SYSTEM module)
+    ↓
+anvil.init()         ← allocates using DEFAULT allocator
+    ↓
+sigma.test.init()    ← TOO LATE to call Application.set_allocator()
+```
+
+### The Solution: Bootstrap Hook
+
+Register a bootstrap function that runs **after SYSTEM modules** but **before other modules**:
+
+```c
+#include <sigma.core/application.h>
+#include <sigma.core/module.h>
+#include <sigma.memory/memory.h>
+
+static void bootstrap_allocator(void) {
+    // sigma.memory is now initialized (SYSTEM module)
+    // Configure app-wide allocator before ecosystem modules allocate
+    Application.set_allocator(Memory.get_allocator());
+}
+
+int main(int argc, char **argv) {
+    // Register bootstrap hook (runs after SYSTEM, before USER modules)
+    Module.set_bootstrap(bootstrap_allocator);
+    
+    // Initialize all modules in 3 phases:
+    // 1. SYSTEM modules (sigma.memory, sigma.core)
+    // 2. Bootstrap hook (Application.set_allocator runs here)
+    // 3. Other modules (anvil, sigma.string, etc. using configured allocator)
+    Module.init_all();
+    
+    run_application();
+    
+    Module.shutdown_all();
+    return 0;
+}
+```
+
+### When to Use Bootstrap
+
+Use `Module.set_bootstrap()` when you need to:
+- Configure `Application.set_allocator()` before libraries allocate
+- Initialize logging before modules log during init
+- Establish security context before modules acquire capabilities
+- Set up any global resource that SYSTEM modules provide but other modules consume
+
+### Bootstrap Constraints
+
+- Bootstrap hook runs exactly **once** per process (during `Module.init_all()`)
+- Multiple calls to `set_bootstrap()` replace the hook (last wins)
+- Bootstrap runs with no arguments (capture state in closures if needed)
+- Bootstrap **must not** call `Module.init_all()` (infinite recursion)
+- Only **SYSTEM** modules are guaranteed initialized when bootstrap runs
+
+---
+
+## Three-Phase Initialization
+
+**Since:** v1.2.0
+
+`Module.init_all()` initializes modules in three phases to support application bootstrap:
+
+### Phase 1: SYSTEM Modules
+All modules with `role = SIGMA_ROLE_SYSTEM` initialize first, in topological order:
+- sigma.core
+- sigma.memory
+
+Context passed: `NULL` (SYSTEM modules never receive alloc contexts)
+
+### Phase 2: Bootstrap Hook
+If registered via `Module.set_bootstrap()`, the bootstrap function runs here. All SYSTEM modules are initialized and ready to use.
+
+### Phase 3: Remaining Modules
+All non-SYSTEM modules initialize in topological order:
+- `SIGMA_ROLE_TRUSTED` modules (if any)
+- `SIGMA_ROLE_USER` modules (libraries and applications)
+
+Context passed: depends on `role` and `alloc` designation
+
+**Example execution timeline:**
+```
+Module.init_all()
+    1. sigma.core.init(NULL)        // SYSTEM
+    2. sigma.memory.init(NULL)      // SYSTEM
+    3. bootstrap_allocator()        // BOOTSTRAP (if registered)
+    4. anvil.init(ctx)              // USER (uses configured allocator)
+    5. sigma.string.init(ctx)       // USER
+    6. my_application.init(ctx)     // USER
+```
+
+---
+
+## Calling init\_all from main() (Legacy Pattern)
+
+**Note:** This pattern still works but is superseded by the Module Vtable interface shown above.
 
 ```c
 #include <sigma.core/module.h>
@@ -211,9 +365,30 @@ Safe to call at any time after `sigma_module_register()`.
 
 ## Summary
 
+### Basic Module Registration
+
 1. Add `module.c` to your project.
 2. Declare a `static const sigma_module_t` with your name, role, alloc mode,
    deps, and lifecycle functions.
 3. Register it with `sigma_module_register()` from a constructor.
-4. Call `sigma_module_init_all()` once from `main()`.
-5. Let `sigma_module_shutdown_all()` clean up on exit.
+4. Call `Module.init_all()` once from `main()`.
+5. Let `Module.shutdown_all()` clean up on exit.
+
+### Application Bootstrap (v1.2.0+)
+
+For applications that need to configure resources before ecosystem modules initialize:
+
+1. Define a bootstrap function: `static void bootstrap_app(void) { ... }`
+2. Register it before init: `Module.set_bootstrap(bootstrap_app);`
+3. Init runs in 3 phases: SYSTEM → bootstrap → others
+4. Use `Application.set_allocator()` in bootstrap to configure global allocator
+
+### Module Interface (v1.2.0+)
+
+Prefer the `Module` Vtable for new code:
+- `Module.register_module(mod)` - register a module
+- `Module.init_all()` - 3-phase initialization
+- `Module.shutdown_all()` - cleanup in reverse order
+- `Module.set_bootstrap(fn)` - application early setup hook
+
+Legacy functions (`sigma_module_*`) remain for backward compatibility.
