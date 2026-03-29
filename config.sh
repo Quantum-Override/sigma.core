@@ -133,7 +133,7 @@ declare -A TEST_COMPILE_FLAGS=(
 # allocator it needs (sigma.memory.o or sigma.system.alloc.o).
 # ---------------------------------------------------------------------------
 declare -A PACKAGES=(
-    ["core"]="sigma.core         | time guid module strings io"
+    ["core"]="sigma.core         | time guid module application strings io"
     ["core.utils"]="sigma.core.utils   | time guid"
     ["module"]="sigma.core.module       | module"
     ["text"]="sigma.core.text    | strings"
