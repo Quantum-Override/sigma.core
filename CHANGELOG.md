@@ -9,7 +9,9 @@
 - module.c: 3-phase module initialization — SYSTEM → bootstrap hook → remaining modules
 - module.c: Module.set_bootstrap() implementation — register app early setup (runs after SYSTEM, before USER/TRUSTED)
 - docs/Application.md: Bootstrap pattern documentation with sigma.memory integration example
+- docs/Using The Module System.md: Module Vtable interface guide, bootstrap pattern, 3-phase initialization explanation
 - test/unit/test_module.c: Bootstrap timing tests (4 tests) — verify hook runs after SYSTEM, before USER modules
+- test/utilities/mock_runner.h: Lightweight test framework for standalone tests (no sigma.test dependency)
 
 ### Changed
 - module.c: sigma_module_init_all() — split single dispatch loop into 3 phases for bootstrap hook timing
