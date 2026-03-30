@@ -4,7 +4,9 @@
 **Project**: sigma.core  
 **Requested by**: sigma.memory team  
 **Date**: 2026-03-28  
-**Status**: OPEN  
+**Status**: RESOLVED  
+**Resolved**: 2026-03-28  
+**Implemented in**: v1.2.0  
 
 ---
 
